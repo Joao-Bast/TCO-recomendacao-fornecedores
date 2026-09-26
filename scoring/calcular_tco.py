@@ -3,15 +3,12 @@ from sqlalchemy import text
 from config.database import get_engine
 from modelo.previsao_preco import prever_preco_atual
 
-# Pesos de partida — ajustáveis conforme necessidade do negócio
 PESO_ATRASO = 0.30
 PESO_AVARIA = 0.20
-
-# Amostra mínima para considerar o score "confiável" (apenas para sinalização, não exclui o fornecedor)
 AMOSTRA_MINIMA_CONFIAVEL = 10
 
 
-def calcular_ranking(nome_produto, top_n=3):
+def calcular_ranking(nome_produto, sessao_id, top_n=3):
     engine = get_engine()
 
     with engine.connect() as conn:
@@ -27,35 +24,31 @@ def calcular_ranking(nome_produto, top_n=3):
                 FROM pedido p
                 JOIN fornecedor f ON f.id = p.fornecedor_id
                 JOIN produto pr ON pr.id = p.produto_id
-                WHERE pr.nome = :nome_produto
+                WHERE pr.nome = :nome_produto AND p.sessao_id = :sessao_id
                 GROUP BY f.nome
             """),
-            {"nome_produto": nome_produto},
+            {"nome_produto": nome_produto, "sessao_id": sessao_id},
         ).fetchall()
 
     if not resultado:
-        raise ValueError(f"Nenhum pedido encontrado para o produto '{nome_produto}'")
+        raise ValueError(f"Nenhum pedido encontrado para o produto '{nome_produto}' nesta sessão")
 
-    # Preço previsto pelo modelo de ML (ou média histórica, se o modelo não for confiável)
-    preco_previsto_produto, r2_modelo, modelo_confiavel = prever_preco_atual(nome_produto)
+    preco_previsto_produto, r2_modelo, modelo_confiavel = prever_preco_atual(nome_produto, sessao_id)
 
-    # Média histórica geral do produto, para calcular o fator de ajuste de tendência
     preco_medio_geral_produto = sum(float(r.preco_medio) * r.total_pedidos for r in resultado) / sum(r.total_pedidos for r in resultado)
     fator_tendencia = preco_previsto_produto / preco_medio_geral_produto
 
     linhas = []
     for row in resultado:
         preco_medio_historico = float(row.preco_medio)
-        preco_medio_ajustado = preco_medio_historico * fator_tendencia  # aplica a tendência do produto
+        preco_medio_ajustado = preco_medio_historico * fator_tendencia
 
         frete_por_unidade_medio = float(row.frete_por_unidade_medio)
         taxa_atraso = float(row.taxa_atraso)
         taxa_avaria = float(row.taxa_avaria)
 
         custo_financeiro = preco_medio_ajustado + frete_por_unidade_medio
-        tco_final = custo_financeiro * (
-            1 + PESO_ATRASO * taxa_atraso + PESO_AVARIA * taxa_avaria
-        )
+        tco_final = custo_financeiro * (1 + PESO_ATRASO * taxa_atraso + PESO_AVARIA * taxa_avaria)
 
         linhas.append({
             "fornecedor": row.fornecedor,
@@ -74,10 +67,10 @@ def calcular_ranking(nome_produto, top_n=3):
     return ranking[:top_n], modelo_confiavel, r2_modelo
 
 
-def exibir_ranking(nome_produto):
-    ranking, modelo_confiavel, r2_modelo = calcular_ranking(nome_produto)
+def exibir_ranking(nome_produto, sessao_id):
+    ranking, modelo_confiavel, r2_modelo = calcular_ranking(nome_produto, sessao_id)
 
-    origem = f"modelo de ML (R²={r2_modelo:.3f})" if modelo_confiavel else "média histórica (modelo de ML não confiável)"
+    origem = f"modelo de ML (R²={r2_modelo:.3f})" if modelo_confiavel else "média histórica"
     print(f"\nTop {len(ranking)} fornecedores para '{nome_produto}':")
     print(f"(ajuste de tendência de preço baseado em: {origem})\n")
 
@@ -94,4 +87,5 @@ def exibir_ranking(nome_produto):
 
 
 if __name__ == "__main__":
-    exibir_ranking("CLORETO DE SODIO PA")
+    SESSAO_TESTE = "00000000-0000-0000-0000-000000000001"
+    exibir_ranking("ACIDO SULFURICO PA", SESSAO_TESTE)

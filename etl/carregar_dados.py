@@ -13,6 +13,10 @@ UNIDADE_POR_PRODUTO = {
     "CLORETO DE SODIO PA": "KG",
 }
 
+# ID de sessão fixo e reservado para a base histórica real da empresa,
+# usada só localmente para validar a metodologia (nunca sobe pro banco em produção)
+from config.constantes import SESSAO_BASE_LOCAL
+
 
 def parse_data(valor):
     """Tenta converter a data; retorna None se não for possível."""
@@ -129,18 +133,20 @@ def inserir_pedidos(engine, df_validos):
             else:
                 dados["id_pedido_origem"] = int(dados["id_pedido_origem"])
 
+            dados["sessao_id"] = SESSAO_BASE_LOCAL
+
             conn.execute(
                 text("""
                     INSERT INTO pedido (
                         id_pedido_origem, fornecedor_id, produto_id, data_compra,
                         quantidade, preco_unitario, custo_frete,
                         prazo_entrega_prometido_dias, tempo_entrega_real_dias,
-                        sofreu_atraso, sofreu_avaria
+                        sofreu_atraso, sofreu_avaria, sessao_id
                     ) VALUES (
                         :id_pedido_origem, :fornecedor_id, :produto_id, :data_compra,
                         :quantidade, :preco_unitario, :custo_frete,
                         :prazo_entrega_prometido_dias, :tempo_entrega_real_dias,
-                        :sofreu_atraso, :sofreu_avaria
+                        :sofreu_atraso, :sofreu_avaria, :sessao_id
                     )
                 """),
                 dados,

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Recomendação de Fornecedores - TCO</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 15px; }
+  h1 { font-size: 22px; }
+  section { margin-bottom: 30px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+  button { padding: 8px 16px; cursor: pointer; }
+  .fornecedor { border-bottom: 1px solid #eee; padding: 10px 0; }
+  .aviso { color: #b8860b; font-size: 13px; }
+  #status { font-size: 14px; color: #555; }
+</style>
+</head>
+<body>
+  <h1>Recomendação de Fornecedores por TCO</h1>
+
+  <section>
+    <h2>1. Baixe a planilha-modelo</h2>
+    <a href="/planilha-modelo"><button type="button">Baixar planilha modelo (.xlsx)</button></a>
+  </section>
+
+  <section>
+    <h2>2. Envie sua planilha preenchida</h2>
+    <input type="file" id="arquivoInput" accept=".xlsx">
+    <button onclick="enviarPlanilha()">Enviar</button>
+    <p id="status"></p>
+  </section>
+
+  <section id="secaoProdutos" style="display:none;">
+    <h2>3. Escolha o produto</h2>
+    <select id="produtoSelect"></select>
+    <button onclick="calcularRanking()">Recomendar</button>
+  </section>
+
+  <section id="secaoResultado" style="display:none;">
+    <h2>Top 3 fornecedores</h2>
+    <p id="origemModelo"></p>
+    <div id="resultado"></div>
+  </section>
+
+<script>
+async function enviarPlanilha() {
+  const input = document.getElementById('arquivoInput');
+  const status = document.getElementById('status');
+
+  if (!input.files.length) {
+    status.textContent = "Selecione um arquivo antes.";
+    return;
+  }
+
+  status.textContent = "Enviando e processando...";
+
+  const formData = new FormData();
+  formData.append('arquivo', input.files[0]);
+
+  const resp = await fetch('/upload', { method: 'POST', body: formData });
+  const dados = await resp.json();
+
+  if (!resp.ok) {
+    status.textContent = "Erro: " + dados.erro;
+    return;
+  }
+
+  status.textContent = `Processado: ${dados.total_validos} pedidos válidos, ${dados.total_rejeitados} rejeitados.`;
+  await carregarProdutos();
+}
+
+async function carregarProdutos() {
+  const resp = await fetch('/produtos');
+  const dados = await resp.json();
+
+  if (!resp.ok) { alert("Erro: " + dados.erro); return; }
+
+  const select = document.getElementById('produtoSelect');
+  select.innerHTML = '';
+  dados.produtos.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    select.appendChild(opt);
+  });
+
+  document.getElementById('secaoProdutos').style.display = 'block';
+}
+
+async function calcularRanking() {
+  const produto = document.getElementById('produtoSelect').value;
+  const resultadoDiv = document.getElementById('resultado');
+  const origemDiv = document.getElementById('origemModelo');
+
+  resultadoDiv.innerHTML = "Calculando...";
+
+  const resp = await fetch('/ranking', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ produto })
+  });
+  const dados = await resp.json();
+
+  if (!resp.ok) { resultadoDiv.innerHTML = "Erro: " + dados.erro; return; }
+
+  origemDiv.textContent = dados.modelo_confiavel
+    ? `Ajuste de tendência via modelo de ML (R² = ${dados.r2.toFixed(3)})`
+    : "Ajuste de tendência via média histórica (modelo de ML não confiável ou dados insuficientes)";
+
+  resultadoDiv.innerHTML = dados.ranking.map((item, i) => `
+    <div class="fornecedor">
+      <strong>${i + 1}º - ${item.fornecedor}</strong>
+      ${!item.amostra_confiavel ? '<span class="aviso"> ⚠ amostra pequena</span>' : ''}
+      <br>TCO estimado: R$ ${item.tco_estimado}
+      <br>Preço histórico: R$ ${item.preco_medio_historico} | Ajustado: R$ ${item.preco_medio_ajustado}
+      <br>Frete por unidade: R$ ${item.frete_por_unidade_medio}
+      <br>Taxa de atraso: ${item.taxa_atraso}% | Taxa de avaria: ${item.taxa_avaria}%
+      <br>Baseado em ${item.total_pedidos} pedidos
+    </div>
+  `).join('');
+
+  document.getElementById('secaoResultado').style.display = 'block';
+}
+</script>
+</body>
+</html>
