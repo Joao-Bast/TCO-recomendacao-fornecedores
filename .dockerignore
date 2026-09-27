@@ -1,0 +1,7 @@
+.venv/
+.git/
+.env
+__pycache__/
+*.pyc
+data/Dados_TCO_Teste.xlsx
+data/linhas_rejeitadas.csv

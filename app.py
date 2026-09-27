@@ -1,6 +1,7 @@
 # app.py
 import os
 import uuid
+import traceback
 from pathlib import Path
 from flask import Flask, request, jsonify, send_file, session, render_template
 from dotenv import load_dotenv
@@ -40,6 +41,7 @@ def upload():
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"erro": f"Erro ao processar a planilha: {e}"}), 500
 
     session["sessao_id"] = sessao_id
@@ -75,6 +77,9 @@ def ranking():
         top3, modelo_confiavel, r2 = calcular_ranking(produto, sessao_id)
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"erro": f"Erro ao calcular ranking: {e}"}), 500
 
     return jsonify({
         "produto": produto,
