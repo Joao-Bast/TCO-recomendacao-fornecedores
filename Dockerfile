@@ -10,7 +10,8 @@ COPY . .
 RUN useradd --create-home appuser && chown -R appuser:appuser /app
 USER appuser
 
-ENV PORT=8080
+# 8080 é a porta padrão que o Cloud Run espera do contêiner.
 EXPOSE 8080
 
-CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 0 app:app
+# Forma exec (lista JSON): sem shell intermediário.
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", "--timeout", "0", "app:app"]

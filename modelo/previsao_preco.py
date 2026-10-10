@@ -94,7 +94,8 @@ def treinar_e_avaliar(nome_produto, sessao_id, n_splits=N_SPLITS):
     candidatos = {
         "Regressão Linear": LinearRegression(),
         "Random Forest": RandomForestRegressor(
-            n_estimators=100, max_depth=4, min_samples_leaf=3, random_state=42
+            n_estimators=100, max_depth=4, min_samples_leaf=3,
+            max_features=1.0, random_state=42
         ),
         "Gradient Boosting": GradientBoostingRegressor(
             n_estimators=100, max_depth=3, min_samples_leaf=3,

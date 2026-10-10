@@ -122,6 +122,19 @@
     margin-right: 12px;
   }
 
+  /* Texto visível apenas para leitores de tela (rótulos de acessibilidade) */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .status-line {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.82rem;
@@ -221,6 +234,7 @@
       <h2 class="step-title">Envie sua planilha preenchida</h2>
     </div>
     <div class="upload-row">
+      <label for="arquivoInput" class="sr-only">Planilha preenchida (.xlsx)</label>
       <input type="file" id="arquivoInput" accept=".xlsx">
       <button onclick="enviarPlanilha()">Enviar</button>
     </div>
@@ -232,6 +246,7 @@
       <span class="step-number">03</span>
       <h2 class="step-title">Escolha o produto</h2>
     </div>
+    <label for="produtoSelect" class="sr-only">Produto</label>
     <select id="produtoSelect"></select>
     <button onclick="calcularRanking()">Calcular recomendação</button>
   </section>
