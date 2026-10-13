@@ -87,7 +87,7 @@ def test_tendencia_clara_e_reconhecida_e_a_previsao_acompanha_a_alta(monkeypatch
 
     assert confiavel is True
     assert r2 > 0.5
-    # preço em alta: a previsão para "hoje" fica acima da média de todo o histórico
+    # preço em alta: a previsão para "hoje" fica acima da média do histórico inteiro
     assert previsao > df["preco_unitario"].mean()
 
 
