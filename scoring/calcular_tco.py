@@ -3,9 +3,66 @@ from sqlalchemy import text
 from config.database import get_engine
 from modelo.previsao_preco import prever_preco_atual
 
+# Pesos de partida — ajustáveis conforme necessidade do negócio
 PESO_ATRASO = 0.30
 PESO_AVARIA = 0.20
+
+# Amostra mínima para considerar o score "confiável" (apenas para sinalização, não exclui o fornecedor)
 AMOSTRA_MINIMA_CONFIAVEL = 10
+
+
+def calcular_tco(preco_medio_ajustado, frete_por_unidade_medio, taxa_atraso, taxa_avaria):
+    """Custo financeiro direto (preço + frete por unidade) acrescido de uma
+    penalidade proporcional às taxas de atraso e avaria (valores entre 0 e 1).
+
+    Retorna (custo_financeiro, tco)."""
+    custo_financeiro = preco_medio_ajustado + frete_por_unidade_medio
+    penalidade = 1 + PESO_ATRASO * taxa_atraso + PESO_AVARIA * taxa_avaria
+    return custo_financeiro, custo_financeiro * penalidade
+
+
+def montar_ranking(linhas_agregadas, preco_previsto_produto, top_n=3):
+    """Calcula o TCO de cada fornecedor e devolve os `top_n` menores.
+
+    `linhas_agregadas`: objetos com os atributos fornecedor, total_pedidos,
+    preco_medio, frete_por_unidade_medio, taxa_atraso e taxa_avaria (é o que
+    a consulta ao banco devolve, uma linha por fornecedor).
+
+    O preço previsto do produto vira um fator de tendência (previsto ÷ média
+    geral histórica), aplicado igualmente ao preço de todos os fornecedores —
+    isso preserva a diferença relativa entre eles."""
+    total_pedidos = sum(r.total_pedidos for r in linhas_agregadas)
+    preco_medio_geral = sum(float(r.preco_medio) * r.total_pedidos for r in linhas_agregadas) / total_pedidos
+    fator_tendencia = preco_previsto_produto / preco_medio_geral
+
+    linhas = []
+    for row in linhas_agregadas:
+        preco_medio_historico = float(row.preco_medio)
+        preco_medio_ajustado = preco_medio_historico * fator_tendencia
+
+        frete_por_unidade_medio = float(row.frete_por_unidade_medio)
+        taxa_atraso = float(row.taxa_atraso)
+        taxa_avaria = float(row.taxa_avaria)
+
+        custo_financeiro, tco_final = calcular_tco(
+            preco_medio_ajustado, frete_por_unidade_medio, taxa_atraso, taxa_avaria
+        )
+
+        linhas.append({
+            "fornecedor": row.fornecedor,
+            "total_pedidos": row.total_pedidos,
+            "preco_medio_historico": round(preco_medio_historico, 2),
+            "preco_medio_ajustado": round(preco_medio_ajustado, 2),
+            "frete_por_unidade_medio": round(frete_por_unidade_medio, 2),
+            "taxa_atraso": round(taxa_atraso * 100, 1),
+            "taxa_avaria": round(taxa_avaria * 100, 1),
+            "custo_financeiro": round(custo_financeiro, 2),
+            "tco_estimado": round(tco_final, 2),
+            "amostra_confiavel": row.total_pedidos >= AMOSTRA_MINIMA_CONFIAVEL,
+        })
+
+    ranking = sorted(linhas, key=lambda x: x["tco_estimado"])
+    return ranking[:top_n]
 
 
 def calcular_ranking(nome_produto, sessao_id, top_n=3):
@@ -35,36 +92,8 @@ def calcular_ranking(nome_produto, sessao_id, top_n=3):
 
     preco_previsto_produto, r2_modelo, modelo_confiavel = prever_preco_atual(nome_produto, sessao_id)
 
-    preco_medio_geral_produto = sum(float(r.preco_medio) * r.total_pedidos for r in resultado) / sum(r.total_pedidos for r in resultado)
-    fator_tendencia = preco_previsto_produto / preco_medio_geral_produto
-
-    linhas = []
-    for row in resultado:
-        preco_medio_historico = float(row.preco_medio)
-        preco_medio_ajustado = preco_medio_historico * fator_tendencia
-
-        frete_por_unidade_medio = float(row.frete_por_unidade_medio)
-        taxa_atraso = float(row.taxa_atraso)
-        taxa_avaria = float(row.taxa_avaria)
-
-        custo_financeiro = preco_medio_ajustado + frete_por_unidade_medio
-        tco_final = custo_financeiro * (1 + PESO_ATRASO * taxa_atraso + PESO_AVARIA * taxa_avaria)
-
-        linhas.append({
-            "fornecedor": row.fornecedor,
-            "total_pedidos": row.total_pedidos,
-            "preco_medio_historico": round(preco_medio_historico, 2),
-            "preco_medio_ajustado": round(preco_medio_ajustado, 2),
-            "frete_por_unidade_medio": round(frete_por_unidade_medio, 2),
-            "taxa_atraso": round(taxa_atraso * 100, 1),
-            "taxa_avaria": round(taxa_avaria * 100, 1),
-            "custo_financeiro": round(custo_financeiro, 2),
-            "tco_estimado": round(tco_final, 2),
-            "amostra_confiavel": row.total_pedidos >= AMOSTRA_MINIMA_CONFIAVEL,
-        })
-
-    ranking = sorted(linhas, key=lambda x: x["tco_estimado"])
-    return ranking[:top_n], modelo_confiavel, r2_modelo
+    ranking = montar_ranking(resultado, preco_previsto_produto, top_n)
+    return ranking, modelo_confiavel, r2_modelo
 
 
 def exibir_ranking(nome_produto, sessao_id):

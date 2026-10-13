@@ -37,6 +37,8 @@ def limpar_sessoes_antigas(engine, horas=HORAS_RETENCAO_SESSAO):
 
 
 def parse_data(valor):
+    if pd.isnull(valor):
+        return None
     try:
         data = pd.to_datetime(valor, dayfirst=True, errors="raise")
         if data.year < 2000 or data.year > 2100:
@@ -194,6 +196,12 @@ def processar_planilha_upload(arquivo, sessao_id=None):
     if not df_validos.empty:
         with engine.begin() as conn:
             for _, row in df_validos.iterrows():
+                dados = row.to_dict()
+                # O pandas troca None por NaN quando a coluna mistura números e vazios,
+                # e o PostgreSQL não aceita NaN em coluna inteira: volta para None/int.
+                id_origem = dados["id_pedido_origem"]
+                dados["id_pedido_origem"] = None if pd.isna(id_origem) else int(id_origem)
+
                 conn.execute(
                     text("""
                         INSERT INTO pedido (
@@ -208,7 +216,7 @@ def processar_planilha_upload(arquivo, sessao_id=None):
                             :sofreu_atraso, :sofreu_avaria, :sessao_id
                         )
                     """),
-                    row.to_dict(),
+                    dados,
                 )
 
     return sessao_id, len(df_validos), len(df_rejeitados), df_rejeitados
