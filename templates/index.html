@@ -18,6 +18,12 @@
     --border: #DCE1E6;
     --warn: #A65A00;
     --warn-soft: #FBF0E1;
+    --track: #EEF1F3;
+    --c-preco: #1B2430;
+    --c-frete: #0F6B72;
+    --c-risco: #C77B1F;
+    --c-alta: #A6321F;
+    --c-queda: #2E7D4F;
   }
 
   * { box-sizing: border-box; }
@@ -41,15 +47,19 @@
     font-size: clamp(1.6rem, 4vw, 2rem);
     font-weight: 700;
     letter-spacing: -0.01em;
-    margin: 0 0 8px;
+    margin: 0 0 12px;
   }
 
-  .subtitle {
+  .apresentacao {
     color: var(--ink-soft);
     font-size: 0.95rem;
-    margin: 0 0 48px;
-    max-width: 52ch;
+    margin: 0 0 10px;
+    max-width: 58ch;
   }
+
+  .apresentacao:last-of-type { margin-bottom: 48px; }
+
+  .apresentacao strong { color: var(--ink); font-weight: 500; }
 
   section {
     border-top: 1px solid var(--border);
@@ -98,14 +108,6 @@
 
   button:hover, .btn-link:hover { background: #2C3948; }
 
-  button.secondary {
-    background: transparent;
-    color: var(--ink);
-    border: 1px solid var(--border);
-  }
-
-  button.secondary:hover { border-color: var(--ink); background: transparent; }
-
   input[type="file"] {
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.85rem;
@@ -144,17 +146,143 @@
 
   .upload-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 
-  #origemModelo {
-    font-size: 0.85rem;
-    color: var(--ink-soft);
-    margin: -4px 0 20px;
+  /* ---------- painel de tendência do preço ---------- */
+  .painel-tendencia {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    padding: 20px;
+    margin-bottom: 36px;
   }
 
+  .tendencia-topo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .tendencia-variacao {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--ink-soft);
+  }
+
+  .tendencia-variacao.alta { color: var(--c-alta); }
+  .tendencia-variacao.queda { color: var(--c-queda); }
+
+  .tendencia-texto { font-size: 0.92rem; }
+
+  .tendencia-valores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px 24px;
+    margin-bottom: 8px;
+  }
+
+  .tendencia-valores .rotulo {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+
+  .tendencia-valores .valor-grande {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.15rem;
+    font-weight: 500;
+  }
+
+  .tendencia-valores .sub {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+
+  .serie { width: 100%; height: auto; display: block; margin: 12px 0 4px; }
+  .serie .grade { stroke: var(--border); stroke-width: 1; }
+  .serie text { fill: var(--ink-soft); font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+  .serie .linha { fill: none; stroke: var(--ink-soft); stroke-width: 1.5; }
+  .serie .ponto { fill: var(--ink); }
+  .serie .media { stroke: var(--c-risco); stroke-width: 1.5; stroke-dasharray: 6 4; }
+  .serie .referencia { fill: var(--accent); stroke: #fff; stroke-width: 2; }
+
+  .legenda-serie { margin: 0 0 12px; }
+  .traco-media {
+    width: 16px;
+    height: 0;
+    border-top: 2px dashed var(--c-risco);
+    display: inline-block;
+  }
+
+  .tendencia-nota {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .titulo-top3 { margin-top: 8px; }
+
+  /* ---------- gráfico de composição do TCO (Top 3) ---------- */
+  .grafico {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+
+  .barra-rotulo {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+
+  .barra-nome { font-weight: 500; }
+
+  .barra-total { font-family: 'IBM Plex Mono', monospace; }
+
+  .barra {
+    display: flex;
+    height: 14px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--track);
+  }
+
+  .seg { height: 100%; }
+
+  .cor-preco { background: var(--c-preco); }
+  .cor-frete { background: var(--c-frete); }
+  .cor-risco { background: var(--c-risco); }
+
+  .legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin: 0 0 24px;
+  }
+
+  .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+
+  .amostra-cor {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  /* ---------- cartões do Top 3 ---------- */
   .fornecedor {
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: 18px 20px;
     margin-bottom: 14px;
+    background: var(--surface);
   }
 
   .fornecedor-head {
@@ -208,6 +336,47 @@
     margin-left: 8px;
   }
 
+  /* ---------- ranking completo ---------- */
+  .ranking-completo {
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  .ranking-completo summary {
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .tabela-rolavel { overflow-x: auto; }
+
+  .tabela-ranking {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 0.88rem;
+  }
+
+  .tabela-ranking th {
+    text-align: left;
+    font-weight: 500;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 8px;
+  }
+
+  .tabela-ranking td {
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tabela-ranking .num { text-align: right; font-family: 'IBM Plex Mono', monospace; }
+
+  .tabela-ranking .pos { font-family: 'IBM Plex Mono', monospace; color: var(--accent); width: 3em; }
+
+  .tabela-ranking tr.destaque td { background: var(--accent-soft); }
+
   .erro {
     color: #A6321F;
     font-size: 0.88rem;
@@ -218,7 +387,8 @@
 <body>
 <main>
   <h1>Recomendação de fornecedores por custo total</h1>
-  <p class="subtitle">Envie seu histórico de compras e veja quais fornecedores oferecem o menor custo real — considerando preço, frete, atrasos e avarias, não só o valor de tabela.</p>
+  <p class="apresentacao">O menor preço nem sempre é a compra mais barata. Este sistema calcula o <strong>Custo Total de Aquisição (TCO)</strong> de cada fornecedor a partir do seu histórico de compras, somando ao preço o frete por unidade e o custo dos riscos de atraso e avaria.</p>
+  <p class="apresentacao">Um modelo de aprendizado de máquina estima a tendência de preço de cada produto. Quando o histórico não permite uma previsão confiável, o sistema usa a média histórica.</p>
 
   <section>
     <div class="step-heading">
@@ -249,18 +419,261 @@
     <label for="produtoSelect" class="sr-only">Produto</label>
     <select id="produtoSelect"></select>
     <button onclick="calcularRanking()">Calcular recomendação</button>
+    <p class="status-line" id="statusRanking"></p>
   </section>
 
   <section id="secaoResultado" style="display:none;">
     <div class="step-heading">
+      <h2 class="step-title">Tendência do preço</h2>
+    </div>
+    <div class="painel-tendencia" id="painelTendencia"></div>
+
+    <div class="step-heading titulo-top3">
       <h2 class="step-title">Top 3 fornecedores</h2>
     </div>
-    <p id="origemModelo"></p>
+
+    <div class="grafico" id="grafico"></div>
+    <div class="legenda">
+      <span><span class="amostra-cor cor-preco"></span>Preço</span>
+      <span><span class="amostra-cor cor-frete"></span>Frete por unidade</span>
+      <span><span class="amostra-cor cor-risco"></span>Risco (atraso e avaria)</span>
+    </div>
+
     <div id="resultado"></div>
+
+    <details class="ranking-completo" id="rankingCompleto">
+      <summary id="resumoRanking">Ver ranking completo</summary>
+      <div class="tabela-rolavel">
+        <table class="tabela-ranking">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Fornecedor</th>
+              <th scope="col" class="num">TCO estimado</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaRanking"></tbody>
+        </table>
+      </div>
+    </details>
   </section>
 </main>
 
 <script>
+const moedaBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+// Todo texto vindo do servidor (nomes da planilha, mensagens de erro) passa por aqui
+// antes de entrar no HTML, para nunca ser interpretado como código.
+function escapar(valor) {
+  return String(valor)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function reais(valor) {
+  return moedaBRL.format(valor);
+}
+
+function percentual(valor) {
+  return `${Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
+}
+
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+function indiceMes(anoMes) {
+  const [ano, mes] = String(anoMes).split('-').map(Number);
+  return ano * 12 + (mes - 1);
+}
+
+function rotuloMes(anoMes) {
+  const [ano, mes] = String(anoMes).split('-').map(Number);
+  return `${MESES[mes - 1]}/${String(ano).slice(2)}`;
+}
+
+function dataBR(iso) {
+  const [ano, mes, dia] = String(iso).split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+function r2Formatado(r2) {
+  return Number(r2).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+}
+
+// Gráfico de linha (SVG puro): preço médio pago por mês, média histórica tracejada
+// e, quando há tendência confiável, o preço de referência atual em destaque.
+function htmlSerie(t) {
+  const serie = t.serie_mensal;
+  if (!serie.length) return '';
+
+  const LARG = 600, ALT = 220, ESQ = 72, DIR = 20, TOPO = 16, BASE = 30;
+  const largUtil = LARG - ESQ - DIR;
+  const altUtil = ALT - TOPO - BASE;
+
+  const indices = serie.map(p => indiceMes(p.mes));
+  const xMin = Math.min(...indices);
+  const xMax = Math.max(...indices);
+  const x = i => (xMax === xMin ? ESQ + largUtil / 2 : ESQ + (i - xMin) / (xMax - xMin) * largUtil);
+
+  const valores = [...serie.map(p => p.preco_medio), t.media_historica, t.preco_referencia];
+  const folga = (Math.max(...valores) - Math.min(...valores)) * 0.1 || Math.max(1, Math.max(...valores) * 0.1);
+  const yMin = Math.max(0, Math.min(...valores) - folga);
+  const yMax = Math.max(...valores) + folga;
+  const y = v => TOPO + (yMax - v) / (yMax - yMin) * altUtil;
+  const n = v => v.toFixed(1);
+
+  const grade = [yMin, (yMin + yMax) / 2, yMax].map(v => `
+      <line class="grade" x1="${ESQ}" x2="${LARG - DIR}" y1="${n(y(v))}" y2="${n(y(v))}"></line>
+      <text x="${ESQ - 8}" y="${n(y(v) + 4)}" text-anchor="end">${reais(v)}</text>`).join('');
+
+  const primeiro = serie[0].mes;
+  const ultimo = serie[serie.length - 1].mes;
+  const eixoX = `
+      <text x="${n(x(indiceMes(primeiro)))}" y="${ALT - 8}" text-anchor="start">${escapar(rotuloMes(primeiro))}</text>
+      ${primeiro === ultimo ? '' : `<text x="${n(x(indiceMes(ultimo)))}" y="${ALT - 8}" text-anchor="end">${escapar(rotuloMes(ultimo))}</text>`}`;
+
+  const linha = `<polyline class="linha" points="${serie.map(p => `${n(x(indiceMes(p.mes)))},${n(y(p.preco_medio))}`).join(' ')}"></polyline>`;
+
+  const pontos = serie.map(p => `
+      <circle class="ponto" cx="${n(x(indiceMes(p.mes)))}" cy="${n(y(p.preco_medio))}" r="3">
+        <title>${escapar(rotuloMes(p.mes))}: ${reais(p.preco_medio)} (${Number(p.pedidos)} pedidos)</title>
+      </circle>`).join('');
+
+  const media = `<line class="media" x1="${ESQ}" x2="${LARG - DIR}" y1="${n(y(t.media_historica))}" y2="${n(y(t.media_historica))}"></line>`;
+
+  const xRef = n(x(indiceMes(String(t.data_referencia).slice(0, 7))));
+  const referencia = t.confiavel ? `
+      <circle class="referencia" cx="${xRef}" cy="${n(y(t.preco_referencia))}" r="7">
+        <title>Preço de referência atual: ${reais(t.preco_referencia)}</title>
+      </circle>` : '';
+
+  const descricao = `Preço médio mensal pago de ${rotuloMes(primeiro)} a ${rotuloMes(ultimo)}. `
+    + `Média histórica ${reais(t.media_historica)}.`
+    + (t.confiavel ? ` Preço de referência atual ${reais(t.preco_referencia)}.` : '');
+
+  return `
+    <svg class="serie" viewBox="0 0 ${LARG} ${ALT}" role="img" aria-label="${escapar(descricao)}">
+      ${grade}${eixoX}${media}${linha}${pontos}${referencia}
+    </svg>
+    <div class="legenda legenda-serie">
+      <span><span class="amostra-cor cor-preco"></span>Preço médio pago no mês</span>
+      <span><span class="traco-media"></span>Média histórica</span>
+      ${t.confiavel ? '<span><span class="amostra-cor cor-frete"></span>Preço de referência atual</span>' : ''}
+    </div>`;
+}
+
+function htmlTendencia(t) {
+  const pedidos = `${Number(t.total_pedidos)} pedidos`;
+
+  if (!t.confiavel) {
+    const motivo = t.motivo === 'poucos_pedidos'
+      ? `Há ${pedidos} deste produto, e o modelo precisa de pelo menos ${Number(t.minimo_pedidos)} para ser treinado.`
+      : `Nenhum modelo superou a média histórica (melhor resultado: ${escapar(t.modelo)}, R² = ${r2Formatado(t.r2)}).`;
+
+    return `
+      <div class="tendencia-topo">
+        <div class="tendencia-variacao">—</div>
+        <div class="tendencia-texto"><strong>Sem tendência confiável para este produto.</strong> ${motivo}</div>
+      </div>
+      <div class="tendencia-valores">
+        <div>
+          <span class="rotulo">Média histórica</span>
+          <span class="valor-grande">${reais(t.media_historica)}</span>
+          <span class="sub">${pedidos} · use como referência na negociação</span>
+        </div>
+      </div>
+      ${htmlSerie(t)}
+      <p class="tendencia-nota">Os preços do Top 3 abaixo usam a média histórica de cada fornecedor, sem ajuste de tendência.</p>`;
+  }
+
+  const v = t.variacao_percentual;
+  const classe = v > 0 ? 'alta' : (v < 0 ? 'queda' : '');
+  const seta = v > 0 ? '↑' : (v < 0 ? '↓' : '→');
+  const sinal = v > 0 ? '+' : (v < 0 ? '−' : '');
+  let frase = 'Preço de referência igual à média histórica';
+  if (v > 0) frase = `Preço de referência ${percentual(Math.abs(v))} acima da média histórica`;
+  if (v < 0) frase = `Preço de referência ${percentual(Math.abs(v))} abaixo da média histórica`;
+
+  return `
+    <div class="tendencia-topo">
+      <div class="tendencia-variacao ${classe}">${seta} ${sinal}${percentual(Math.abs(v))}</div>
+      <div class="tendencia-texto"><strong>${frase}.</strong> Use como referência na negociação: é o patamar de preço que o seu histórico de compras indica para hoje.</div>
+    </div>
+    <div class="tendencia-valores">
+      <div>
+        <span class="rotulo">Preço de referência atual</span>
+        <span class="valor-grande">${reais(t.preco_referencia)}</span>
+        <span class="sub">estimado para ${escapar(dataBR(t.data_referencia))}</span>
+      </div>
+      <div>
+        <span class="rotulo">Média histórica</span>
+        <span class="valor-grande">${reais(t.media_historica)}</span>
+        <span class="sub">${pedidos}</span>
+      </div>
+    </div>
+    ${htmlSerie(t)}
+    <p class="tendencia-nota">Estimado por ${escapar(t.modelo)}: o modelo explica ${Math.round(t.r2 * 100)}% da variação de preço (R² = ${r2Formatado(t.r2)}). Os preços do Top 3 abaixo já estão ajustados por essa tendência.</p>`;
+}
+
+function htmlGrafico(top3) {
+  const maior = Math.max(...top3.map(item => item.tco_estimado)) || 1;
+  const largura = valor => `${(valor / maior * 100).toFixed(2)}%`;
+
+  return top3.map(item => {
+    const preco = item.preco_medio_ajustado;
+    const frete = item.frete_por_unidade_medio;
+    const risco = Math.max(0, item.tco_estimado - preco - frete);
+    const descricao = `${item.fornecedor}: preço ${reais(preco)}, frete ${reais(frete)}, `
+      + `risco ${reais(risco)}, TCO ${reais(item.tco_estimado)}`;
+
+    return `
+      <div class="barra-linha">
+        <div class="barra-rotulo">
+          <span class="barra-nome">${escapar(item.fornecedor)}</span>
+          <span class="barra-total">${reais(item.tco_estimado)}</span>
+        </div>
+        <div class="barra" role="img" aria-label="${escapar(descricao)}">
+          <span class="seg cor-preco" style="width:${largura(preco)}" title="Preço: ${reais(preco)}"></span>
+          <span class="seg cor-frete" style="width:${largura(frete)}" title="Frete por unidade: ${reais(frete)}"></span>
+          <span class="seg cor-risco" style="width:${largura(risco)}" title="Risco: ${reais(risco)}"></span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function htmlCartoes(top3) {
+  return top3.map((item, i) => `
+    <div class="fornecedor">
+      <div class="fornecedor-head">
+        <span class="rank">${String(i + 1).padStart(2, '0')}</span>
+        <span class="fornecedor-nome">${escapar(item.fornecedor)}</span>
+        ${item.amostra_confiavel ? '' : '<span class="aviso-amostra">amostra pequena</span>'}
+      </div>
+      <div class="tco-line">${reais(item.tco_estimado)}</div>
+      <div class="detalhes">
+        <div>Preço histórico <span class="valor">${reais(item.preco_medio_historico)}</span></div>
+        <div>Preço ajustado <span class="valor">${reais(item.preco_medio_ajustado)}</span></div>
+        <div>Frete/unidade <span class="valor">${reais(item.frete_por_unidade_medio)}</span></div>
+        <div>Taxa de atraso <span class="valor">${percentual(item.taxa_atraso)}</span></div>
+        <div>Taxa de avaria <span class="valor">${percentual(item.taxa_avaria)}</span></div>
+        <div>Amostra <span class="valor">${Number(item.total_pedidos)} pedidos</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function htmlTabela(completo) {
+  return completo.map(item => `
+    <tr class="${item.posicao <= 3 ? 'destaque' : ''}">
+      <td class="pos">${Number(item.posicao)}</td>
+      <td>${escapar(item.fornecedor)}</td>
+      <td class="num">${reais(item.tco_estimado)}</td>
+    </tr>
+  `).join('');
+}
+
 async function enviarPlanilha() {
   const input = document.getElementById('arquivoInput');
   const status = document.getElementById('status');
@@ -271,6 +684,7 @@ async function enviarPlanilha() {
   }
 
   status.textContent = "Enviando e processando...";
+  document.getElementById('secaoResultado').style.display = 'none';
 
   const formData = new FormData();
   formData.append('arquivo', input.files[0]);
@@ -279,7 +693,7 @@ async function enviarPlanilha() {
   const dados = await resp.json();
 
   if (!resp.ok) {
-    status.innerHTML = `<span class="erro">${dados.erro}</span>`;
+    status.innerHTML = `<span class="erro">${escapar(dados.erro)}</span>`;
     return;
   }
 
@@ -307,11 +721,11 @@ async function carregarProdutos() {
 
 async function calcularRanking() {
   const produto = document.getElementById('produtoSelect').value;
-  const resultadoDiv = document.getElementById('resultado');
-  const origemDiv = document.getElementById('origemModelo');
+  const status = document.getElementById('statusRanking');
+  const detalhesRanking = document.getElementById('rankingCompleto');
 
-  resultadoDiv.innerHTML = '';
-  origemDiv.textContent = "Calculando...";
+  status.textContent = "Calculando...";
+  document.getElementById('secaoResultado').style.display = 'none';
 
   const resp = await fetch('/ranking', {
     method: 'POST',
@@ -320,30 +734,20 @@ async function calcularRanking() {
   });
   const dados = await resp.json();
 
-  if (!resp.ok) { origemDiv.innerHTML = `<span class="erro">${dados.erro}</span>`; return; }
+  if (!resp.ok) {
+    status.innerHTML = `<span class="erro">${escapar(dados.erro)}</span>`;
+    return;
+  }
 
-  origemDiv.textContent = dados.modelo_confiavel
-    ? `Tendência estimada por modelo de aprendizado de máquina (R² = ${dados.r2.toFixed(3)})`
-    : "Tendência estimada por média histórica — modelo de ML não atingiu confiabilidade mínima para este produto";
+  status.textContent = '';
+  document.getElementById('painelTendencia').innerHTML = htmlTendencia(dados.tendencia);
+  document.getElementById('grafico').innerHTML = htmlGrafico(dados.ranking);
+  document.getElementById('resultado').innerHTML = htmlCartoes(dados.ranking);
 
-  resultadoDiv.innerHTML = dados.ranking.map((item, i) => `
-    <div class="fornecedor">
-      <div class="fornecedor-head">
-        <span class="rank">${String(i + 1).padStart(2, '0')}</span>
-        <span class="fornecedor-nome">${item.fornecedor}</span>
-        ${!item.amostra_confiavel ? '<span class="aviso-amostra">amostra pequena</span>' : ''}
-      </div>
-      <div class="tco-line">R$ ${item.tco_estimado}</div>
-      <div class="detalhes">
-        <div>Preço histórico <span class="valor">R$ ${item.preco_medio_historico}</span></div>
-        <div>Preço ajustado <span class="valor">R$ ${item.preco_medio_ajustado}</span></div>
-        <div>Frete/unidade <span class="valor">R$ ${item.frete_por_unidade_medio}</span></div>
-        <div>Taxa de atraso <span class="valor">${item.taxa_atraso}%</span></div>
-        <div>Taxa de avaria <span class="valor">${item.taxa_avaria}%</span></div>
-        <div>Amostra <span class="valor">${item.total_pedidos} pedidos</span></div>
-      </div>
-    </div>
-  `).join('');
+  document.getElementById('tabelaRanking').innerHTML = htmlTabela(dados.ranking_completo);
+  document.getElementById('resumoRanking').textContent =
+    `Ver ranking completo (${dados.ranking_completo.length} fornecedores)`;
+  detalhesRanking.open = false;
 
   document.getElementById('secaoResultado').style.display = 'block';
 }

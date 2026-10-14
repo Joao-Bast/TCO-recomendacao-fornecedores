@@ -174,3 +174,13 @@ def test_campos_do_ranking_batem_com_o_que_a_interface_le():
         "frete_por_unidade_medio", "taxa_atraso", "taxa_avaria", "custo_financeiro",
         "tco_estimado", "amostra_confiavel",
     }
+
+
+def test_top_n_none_devolve_todos_os_fornecedores_em_ordem():
+    """A rota /ranking usa top_n=None para montar o ranking completo."""
+    linhas = [fornecedor(nome, preco, 1.0) for nome, preco in
+              [("E", 50.0), ("A", 10.0), ("D", 40.0), ("B", 20.0), ("C", 30.0)]]
+
+    ranking = montar_ranking(linhas, media_geral(*linhas), top_n=None)
+
+    assert [item["fornecedor"] for item in ranking] == ["A", "B", "C", "D", "E"]

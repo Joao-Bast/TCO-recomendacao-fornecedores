@@ -74,7 +74,9 @@ def ranking():
         return jsonify({"erro": "Informe o produto."}), 400
 
     try:
-        top3, modelo_confiavel, r2 = calcular_ranking(produto, sessao_id)
+        # top_n=None devolve todos os fornecedores; o Top 3 sai da mesma lista,
+        # assim o modelo de ML treina uma vez só por consulta.
+        ranking_completo, tendencia = calcular_ranking(produto, sessao_id, top_n=None)
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
     except Exception as e:
@@ -83,9 +85,12 @@ def ranking():
 
     return jsonify({
         "produto": produto,
-        "modelo_confiavel": modelo_confiavel,
-        "r2": r2,
-        "ranking": top3,
+        "tendencia": tendencia,
+        "ranking": ranking_completo[:3],
+        "ranking_completo": [
+            {"posicao": posicao, "fornecedor": item["fornecedor"], "tco_estimado": item["tco_estimado"]}
+            for posicao, item in enumerate(ranking_completo, start=1)
+        ],
     })
 
 

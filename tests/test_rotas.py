@@ -148,12 +148,34 @@ def test_ranking_sem_produto_e_recusado(cliente):
     assert cliente.post("/ranking").status_code == 400
 
 
+TODOS = [
+    {"fornecedor": "A", "tco_estimado": 10.0, "total_pedidos": 30},
+    {"fornecedor": "B", "tco_estimado": 12.0, "total_pedidos": 25},
+    {"fornecedor": "C", "tco_estimado": 15.0, "total_pedidos": 12},
+    {"fornecedor": "D", "tco_estimado": 21.0, "total_pedidos": 8},
+]
+
+TENDENCIA = {
+    "preco_referencia": 43.11,
+    "media_historica": 26.0,
+    "variacao_percentual": 65.8,
+    "confiavel": True,
+    "modelo": "Random Forest",
+    "r2": 0.42,
+    "motivo": None,
+    "total_pedidos": 105,
+    "minimo_pedidos": 70,
+    "data_referencia": "2026-07-27",
+    "serie_mensal": [{"mes": "2026-07", "preco_medio": 42.0, "pedidos": 3}],
+}
+
+
 def test_ranking_valido_devolve_o_resultado_da_sessao(cliente, monkeypatch):
     chamadas = []
 
-    def falso(produto, sessao):
-        chamadas.append((produto, sessao))
-        return [{"fornecedor": "A", "tco_estimado": 10.0}], True, 0.42
+    def falso(produto, sessao, top_n=3):
+        chamadas.append((produto, sessao, top_n))
+        return TODOS, TENDENCIA
 
     monkeypatch.setattr(app_modulo, "calcular_ranking", falso)
     definir_sessao(cliente, "sessao-da-maria")
@@ -163,14 +185,29 @@ def test_ranking_valido_devolve_o_resultado_da_sessao(cliente, monkeypatch):
     assert resposta.status_code == 200
     dados = resposta.get_json()
     assert dados["produto"] == "ACIDO X"
-    assert dados["modelo_confiavel"] is True
-    assert dados["r2"] == 0.42
-    assert dados["ranking"] == [{"fornecedor": "A", "tco_estimado": 10.0}]
-    assert chamadas == [("ACIDO X", "sessao-da-maria")]
+    assert dados["tendencia"] == TENDENCIA
+    assert dados["ranking"] == TODOS[:3]
+    # o modelo é consultado uma vez só, pedindo todos os fornecedores
+    assert chamadas == [("ACIDO X", "sessao-da-maria", None)]
+
+
+def test_ranking_completo_traz_todos_com_posicao_e_so_o_tco(cliente, monkeypatch):
+    todos = TODOS
+    monkeypatch.setattr(app_modulo, "calcular_ranking", lambda produto, sessao, top_n=3: (todos, TENDENCIA))
+    definir_sessao(cliente)
+
+    dados = cliente.post("/ranking", json={"produto": "ACIDO X"}).get_json()
+
+    assert dados["ranking_completo"] == [
+        {"posicao": 1, "fornecedor": "A", "tco_estimado": 10.0},
+        {"posicao": 2, "fornecedor": "B", "tco_estimado": 12.0},
+        {"posicao": 3, "fornecedor": "C", "tco_estimado": 15.0},
+        {"posicao": 4, "fornecedor": "D", "tco_estimado": 21.0},
+    ]
 
 
 def test_ranking_de_produto_inexistente_devolve_400(cliente, monkeypatch):
-    def sem_pedidos(produto, sessao):
+    def sem_pedidos(produto, sessao, top_n=3):
         raise ValueError("Nenhum pedido encontrado")
 
     monkeypatch.setattr(app_modulo, "calcular_ranking", sem_pedidos)
@@ -183,7 +220,7 @@ def test_ranking_de_produto_inexistente_devolve_400(cliente, monkeypatch):
 
 
 def test_erro_inesperado_no_ranking_vira_500_com_mensagem(cliente, monkeypatch):
-    def quebra(produto, sessao):
+    def quebra(produto, sessao, top_n=3):
         raise RuntimeError("falha qualquer")
 
     monkeypatch.setattr(app_modulo, "calcular_ranking", quebra)

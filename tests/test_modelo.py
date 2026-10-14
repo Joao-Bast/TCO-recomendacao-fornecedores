@@ -9,8 +9,12 @@ import pytest
 from modelo import previsao_preco
 from modelo.previsao_preco import (
     MINIMO_PEDIDOS_PARA_TREINAR,
+    MOTIVO_MODELO_NAO_SUPEROU_MEDIA,
+    MOTIVO_POUCOS_PEDIDOS,
+    analisar_tendencia,
     preparar_features,
     prever_preco_atual,
+    serie_mensal,
     treinar_e_avaliar,
 )
 
@@ -148,3 +152,108 @@ def test_mesmos_dados_dao_sempre_o_mesmo_resultado(monkeypatch):
 
     assert r2_primeiro == r2_segundo
     assert modelo_primeiro == modelo_segundo
+
+
+# ------------------------------------------------- tendência do preço (painel)
+
+def test_preco_em_alta_da_variacao_positiva(monkeypatch):
+    df = historico(100, tendencia=0.4, ruido=1.0)
+    usar_historico(monkeypatch, df)
+
+    t = analisar_tendencia("PRODUTO", SESSAO)
+
+    assert t["confiavel"] is True
+    assert t["motivo"] is None
+    assert t["modelo"] in {"Regressão Linear", "Random Forest", "Gradient Boosting"}
+    assert t["preco_referencia"] > t["media_historica"]
+    assert t["variacao_percentual"] > 0
+    assert t["media_historica"] == pytest.approx(df["preco_unitario"].mean())
+
+
+def test_preco_em_queda_da_variacao_negativa(monkeypatch):
+    usar_historico(monkeypatch, historico(100, tendencia=-0.05, ruido=0.5))
+
+    t = analisar_tendencia("PRODUTO", SESSAO)
+
+    assert t["confiavel"] is True
+    assert t["preco_referencia"] < t["media_historica"]
+    assert t["variacao_percentual"] < 0
+
+
+def test_variacao_e_coerente_com_o_preco_de_referencia(monkeypatch):
+    usar_historico(monkeypatch, historico(100, tendencia=0.4, ruido=1.0))
+
+    t = analisar_tendencia("PRODUTO", SESSAO)
+
+    esperado = (t["preco_referencia"] / t["media_historica"] - 1) * 100
+    assert t["variacao_percentual"] == pytest.approx(esperado, abs=0.05)
+
+
+def test_poucos_pedidos_sem_tendencia_e_com_o_motivo(monkeypatch):
+    df = historico(MINIMO_PEDIDOS_PARA_TREINAR - 1, tendencia=0.4, ruido=1.0)
+    usar_historico(monkeypatch, df)
+
+    t = analisar_tendencia("PRODUTO", SESSAO)
+
+    assert t["confiavel"] is False
+    assert t["motivo"] == MOTIVO_POUCOS_PEDIDOS
+    assert t["modelo"] is None
+    assert t["r2"] is None
+    assert t["variacao_percentual"] == 0.0
+    assert t["preco_referencia"] == pytest.approx(t["media_historica"])
+    assert t["total_pedidos"] == MINIMO_PEDIDOS_PARA_TREINAR - 1
+    assert t["minimo_pedidos"] == MINIMO_PEDIDOS_PARA_TREINAR
+
+
+def test_modelo_que_nao_supera_a_media_vira_sem_tendencia(monkeypatch):
+    df = historico(100, tendencia=0.2, ruido=1.0)
+    monkeypatch.setattr(
+        previsao_preco,
+        "treinar_e_avaliar",
+        lambda produto, sessao: (ModeloQueDiz999(), df["data_compra"].min(), df, -0.2, "Gradient Boosting"),
+    )
+
+    t = analisar_tendencia("PRODUTO", SESSAO)
+
+    assert t["confiavel"] is False
+    assert t["motivo"] == MOTIVO_MODELO_NAO_SUPEROU_MEDIA
+    assert t["modelo"] == "Gradient Boosting"      # o "menos pior", mostrado como informação
+    assert t["r2"] == pytest.approx(-0.2)
+    assert t["variacao_percentual"] == 0.0
+    assert t["preco_referencia"] == pytest.approx(df["preco_unitario"].mean())   # o 999 não vaza
+
+
+def test_tendencia_vira_json_e_aponta_a_data_mais_recente(monkeypatch):
+    df = historico(100, tendencia=0.4, ruido=1.0)
+    usar_historico(monkeypatch, df)
+
+    t = analisar_tendencia("PRODUTO", SESSAO)
+
+    json.dumps(t)
+    assert t["data_referencia"] == df["data_compra"].max().date().isoformat()
+    assert type(t["preco_referencia"]) is float
+    assert type(t["confiavel"]) is bool
+
+
+def test_serie_mensal_agrupa_por_mes_e_pula_meses_sem_compra():
+    df = pd.DataFrame({
+        "data_compra": pd.to_datetime(["2024-01-05", "2024-01-20", "2024-03-10"]),
+        "quantidade": [1.0, 1.0, 1.0],
+        "preco_unitario": [10.0, 20.0, 40.0],
+    })
+
+    assert serie_mensal(df) == [
+        {"mes": "2024-01", "preco_medio": 15.0, "pedidos": 2},
+        {"mes": "2024-03", "preco_medio": 40.0, "pedidos": 1},
+    ]
+
+
+def test_serie_mensal_cobre_todo_o_historico(monkeypatch):
+    df = historico(100, tendencia=0.4, ruido=1.0)
+    usar_historico(monkeypatch, df)
+
+    t = analisar_tendencia("PRODUTO", SESSAO)
+
+    assert sum(ponto["pedidos"] for ponto in t["serie_mensal"]) == len(df)
+    meses = [ponto["mes"] for ponto in t["serie_mensal"]]
+    assert meses == sorted(meses)

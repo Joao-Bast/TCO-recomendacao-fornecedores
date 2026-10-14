@@ -1,7 +1,7 @@
 # scoring/calcular_tco.py
 from sqlalchemy import text
 from config.database import get_engine
-from modelo.previsao_preco import prever_preco_atual
+from modelo.previsao_preco import analisar_tendencia
 
 # Pesos de partida — ajustáveis conforme necessidade do negócio
 PESO_ATRASO = 0.30
@@ -90,18 +90,22 @@ def calcular_ranking(nome_produto, sessao_id, top_n=3):
     if not resultado:
         raise ValueError(f"Nenhum pedido encontrado para o produto '{nome_produto}' nesta sessão")
 
-    preco_previsto_produto, r2_modelo, modelo_confiavel = prever_preco_atual(nome_produto, sessao_id)
+    # O mesmo preço de referência exibido no painel de tendência ajusta o ranking.
+    tendencia = analisar_tendencia(nome_produto, sessao_id)
 
-    ranking = montar_ranking(resultado, preco_previsto_produto, top_n)
-    return ranking, modelo_confiavel, r2_modelo
+    ranking = montar_ranking(resultado, tendencia["preco_referencia"], top_n)
+    return ranking, tendencia
 
 
 def exibir_ranking(nome_produto, sessao_id):
-    ranking, modelo_confiavel, r2_modelo = calcular_ranking(nome_produto, sessao_id)
+    ranking, tendencia = calcular_ranking(nome_produto, sessao_id)
 
-    origem = f"modelo de ML (R²={r2_modelo:.3f})" if modelo_confiavel else "média histórica"
+    if tendencia["confiavel"]:
+        origem = f"modelo de ML ({tendencia['modelo']}, R²={tendencia['r2']:.3f})"
+    else:
+        origem = "média histórica"
     print(f"\nTop {len(ranking)} fornecedores para '{nome_produto}':")
-    print(f"(ajuste de tendência de preço baseado em: {origem})\n")
+    print(f"(tendência do preço: {tendencia['variacao_percentual']:+.1f}% — baseado em: {origem})\n")
 
     for posicao, item in enumerate(ranking, start=1):
         aviso = "" if item["amostra_confiavel"] else "  ⚠ amostra pequena"

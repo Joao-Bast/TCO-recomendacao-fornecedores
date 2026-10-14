@@ -10,6 +10,10 @@ R2_MINIMO_PARA_CONFIAR = 0.0
 N_SPLITS = 5
 MINIMO_PEDIDOS_PARA_TREINAR = 70  # abaixo disso, nem tenta treinar — vai direto pra média histórica
 
+# Motivos para não haver tendência confiável (exibidos no painel do front)
+MOTIVO_POUCOS_PEDIDOS = "poucos_pedidos"
+MOTIVO_MODELO_NAO_SUPEROU_MEDIA = "modelo_nao_superou_media"
+
 
 def listar_produtos_cadastrados(sessao_id):
     """Lista só os produtos que têm pelo menos um pedido dentro dessa sessão."""
@@ -123,36 +127,78 @@ def treinar_e_avaliar(nome_produto, sessao_id, n_splits=N_SPLITS):
     return modelo_final, data_inicial, df, melhor["r2_medio"], melhor_nome
 
 
-def prever_preco_atual(nome_produto, sessao_id):
-    """Retorna (preco_previsto, r2, confiavel) — sempre em tipos nativos do
-    Python (float/bool/None), nunca tipos do NumPy, para serem serializáveis
-    em JSON sem problema."""
+def serie_mensal(df):
+    """Preço médio pago em cada mês com compra (meses sem compra ficam de fora)."""
+    mensal = (
+        df.assign(mes=df["data_compra"].dt.to_period("M"))
+        .groupby("mes")
+        .agg(preco_medio=("preco_unitario", "mean"), pedidos=("preco_unitario", "size"))
+        .reset_index()
+    )
+    return [
+        {"mes": str(linha.mes), "preco_medio": round(float(linha.preco_medio), 2), "pedidos": int(linha.pedidos)}
+        for linha in mensal.itertuples(index=False)
+    ]
+
+
+def analisar_tendencia(nome_produto, sessao_id):
+    """Tendência do preço do produto no histórico de compras da sessão.
+
+    O modelo estima o preço na data da compra mais recente, para uma quantidade
+    típica (mediana): é o "preço de referência atual". A variação compara esse
+    preço com a média simples de todo o histórico. Quando não há tendência
+    confiável, o preço de referência é a própria média (variação 0%).
+
+    Devolve só tipos nativos do Python, prontos para virar JSON."""
     modelo, data_inicial, df, r2, nome_modelo = treinar_e_avaliar(nome_produto, sessao_id)
 
-    if modelo is None:
-        previsao = df["preco_unitario"].mean()
-        print(f"Usando média histórica para '{nome_produto}': R$ {previsao:.2f}")
-        return float(previsao), None, False
+    media = float(df["preco_unitario"].mean())
+    resultado = {
+        "preco_referencia": media,
+        "media_historica": media,
+        "variacao_percentual": 0.0,
+        "confiavel": False,
+        "modelo": nome_modelo,
+        "r2": None if r2 is None else float(r2),
+        "motivo": None,
+        "total_pedidos": int(len(df)),
+        "minimo_pedidos": MINIMO_PEDIDOS_PARA_TREINAR,
+        "data_referencia": df["data_compra"].max().date().isoformat(),
+        "serie_mensal": serie_mensal(df),
+    }
 
-    quantidade_referencia = df["quantidade"].median()
-    dias_ate_hoje = (df["data_compra"].max() - data_inicial).days
-    mes_atual = df["data_compra"].max().month
+    if modelo is None:
+        print(f"Usando média histórica para '{nome_produto}': R$ {media:.2f}")
+        resultado["motivo"] = MOTIVO_POUCOS_PEDIDOS
+        return resultado
+
+    if not r2 > R2_MINIMO_PARA_CONFIAR:
+        print(f"Modelo não confiável (R²={r2:.3f}) — usando média histórica para '{nome_produto}': R$ {media:.2f}")
+        resultado["motivo"] = MOTIVO_MODELO_NAO_SUPEROU_MEDIA
+        return resultado
 
     entrada = pd.DataFrame(
-        [[dias_ate_hoje, quantidade_referencia, mes_atual]],
+        [[
+            (df["data_compra"].max() - data_inicial).days,
+            df["quantidade"].median(),
+            df["data_compra"].max().month,
+        ]],
         columns=["dias_desde_inicio", "quantidade", "mes"],
     )
+    previsao = float(modelo.predict(entrada)[0])
+    print(f"Preço previsto ({nome_modelo}, R²={r2:.3f}) para '{nome_produto}': R$ {previsao:.2f}")
 
-    confiavel = bool(r2 > R2_MINIMO_PARA_CONFIAR)
+    resultado["preco_referencia"] = previsao
+    resultado["variacao_percentual"] = round((previsao / media - 1) * 100, 1)
+    resultado["confiavel"] = True
+    return resultado
 
-    if confiavel:
-        previsao = modelo.predict(entrada)[0]
-        print(f"Preço previsto ({nome_modelo}, R²={r2:.3f}) para '{nome_produto}': R$ {previsao:.2f}")
-    else:
-        previsao = df["preco_unitario"].mean()
-        print(f"Modelo não confiável (R²={r2:.3f}) — usando média histórica para '{nome_produto}': R$ {previsao:.2f}")
 
-    return float(previsao), float(r2), confiavel
+def prever_preco_atual(nome_produto, sessao_id):
+    """Retorna (preco_previsto, r2, confiavel) — atalho para quem só precisa do
+    preço de referência. Tipos nativos do Python (float/bool/None)."""
+    tendencia = analisar_tendencia(nome_produto, sessao_id)
+    return tendencia["preco_referencia"], tendencia["r2"], tendencia["confiavel"]
 
 
 if __name__ == "__main__":
