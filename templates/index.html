@@ -530,11 +530,14 @@ function htmlSerie(t) {
 
   const primeiro = serie[0].mes;
   const ultimo = serie[serie.length - 1].mes;
-  const eixoX = `
-      <text x="${n(x(indiceMes(primeiro)))}" y="${ALT - 8}" text-anchor="start">${escapar(rotuloMes(primeiro))}</text>
-      ${primeiro === ultimo ? '' : `<text x="${n(x(indiceMes(ultimo)))}" y="${ALT - 8}" text-anchor="end">${escapar(rotuloMes(ultimo))}</text>`}`;
+  const textoEixo = (anoMes, ancora) =>
+    `<text x="${n(x(indiceMes(anoMes)))}" y="${ALT - 8}" text-anchor="${ancora}">${escapar(rotuloMes(anoMes))}</text>`;
+  let eixoX = textoEixo(primeiro, 'start');
+  if (primeiro !== ultimo) eixoX += textoEixo(ultimo, 'end');
 
-  const linha = `<polyline class="linha" points="${serie.map(p => `${n(x(indiceMes(p.mes)))},${n(y(p.preco_medio))}`).join(' ')}"></polyline>`;
+  // Coordenadas montadas fora do HTML, sem template string aninhada
+  const coordenadas = serie.map(p => `${n(x(indiceMes(p.mes)))},${n(y(p.preco_medio))}`).join(' ');
+  const linha = `<polyline class="linha" points="${coordenadas}"></polyline>`;
 
   const pontos = serie.map(p => `
       <circle class="ponto" cx="${n(x(indiceMes(p.mes)))}" cy="${n(y(p.preco_medio))}" r="3">
@@ -564,6 +567,17 @@ function htmlSerie(t) {
     </div>`;
 }
 
+// Direção da tendência: classe de cor, seta, sinal e frase do painel.
+function direcaoTendencia(v) {
+  if (v > 0) {
+    return { classe: 'alta', seta: '↑', sinal: '+', frase: `Preço de referência ${percentual(v)} acima da média histórica` };
+  }
+  if (v < 0) {
+    return { classe: 'queda', seta: '↓', sinal: '−', frase: `Preço de referência ${percentual(-v)} abaixo da média histórica` };
+  }
+  return { classe: '', seta: '→', sinal: '', frase: 'Preço de referência igual à média histórica' };
+}
+
 function htmlTendencia(t) {
   const pedidos = `${Number(t.total_pedidos)} pedidos`;
 
@@ -589,17 +603,12 @@ function htmlTendencia(t) {
   }
 
   const v = t.variacao_percentual;
-  const classe = v > 0 ? 'alta' : (v < 0 ? 'queda' : '');
-  const seta = v > 0 ? '↑' : (v < 0 ? '↓' : '→');
-  const sinal = v > 0 ? '+' : (v < 0 ? '−' : '');
-  let frase = 'Preço de referência igual à média histórica';
-  if (v > 0) frase = `Preço de referência ${percentual(Math.abs(v))} acima da média histórica`;
-  if (v < 0) frase = `Preço de referência ${percentual(Math.abs(v))} abaixo da média histórica`;
+  const direcao = direcaoTendencia(v);
 
   return `
     <div class="tendencia-topo">
-      <div class="tendencia-variacao ${classe}">${seta} ${sinal}${percentual(Math.abs(v))}</div>
-      <div class="tendencia-texto"><strong>${frase}.</strong> Use como referência na negociação: é o patamar de preço que o seu histórico de compras indica para hoje.</div>
+      <div class="tendencia-variacao ${direcao.classe}">${direcao.seta} ${direcao.sinal}${percentual(Math.abs(v))}</div>
+      <div class="tendencia-texto"><strong>${direcao.frase}.</strong> Use como referência na negociação: é o patamar de preço que o seu histórico de compras indica para hoje.</div>
     </div>
     <div class="tendencia-valores">
       <div>

@@ -172,7 +172,7 @@ def analisar_tendencia(nome_produto, sessao_id):
         resultado["motivo"] = MOTIVO_POUCOS_PEDIDOS
         return resultado
 
-    if not r2 > R2_MINIMO_PARA_CONFIAR:
+    if r2 <= R2_MINIMO_PARA_CONFIAR:
         print(f"Modelo não confiável (R²={r2:.3f}) — usando média histórica para '{nome_produto}': R$ {media:.2f}")
         resultado["motivo"] = MOTIVO_MODELO_NAO_SUPEROU_MEDIA
         return resultado
