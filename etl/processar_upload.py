@@ -1,7 +1,7 @@
 # etl/processar_upload.py
 import uuid
 import pandas as pd
-from sqlalchemy import text
+from sqlalchemy import column, insert, table, text
 from config.database import get_engine
 from config.constantes import SESSAO_BASE_LOCAL
 
@@ -19,6 +19,19 @@ COLUNAS_ESPERADAS = {
 
 HORAS_RETENCAO_SESSAO = 24
 
+# Quantos pedidos vão ao banco em cada viagem. Uma linha por viagem deixava
+# planilhas grandes lentas (o Cloud Run e o banco ficam em regiões diferentes).
+TAMANHO_LOTE = 500
+
+TABELA_PEDIDO = table(
+    "pedido",
+    column("id_pedido_origem"), column("fornecedor_id"), column("produto_id"),
+    column("data_compra"), column("quantidade"), column("preco_unitario"),
+    column("custo_frete"), column("prazo_entrega_prometido_dias"),
+    column("tempo_entrega_real_dias"), column("sofreu_atraso"),
+    column("sofreu_avaria"), column("sessao_id"),
+)
+
 
 def limpar_sessoes_antigas(engine, horas=HORAS_RETENCAO_SESSAO):
     """Apaga pedidos de uploads com mais de `horas` de idade, exceto a base
@@ -34,6 +47,14 @@ def limpar_sessoes_antigas(engine, horas=HORAS_RETENCAO_SESSAO):
         )
         if resultado.rowcount:
             print(f"Limpeza automática: {resultado.rowcount} pedidos de sessões antigas removidos.")
+
+
+def gravar_pedidos(engine, pedidos, tamanho_lote=TAMANHO_LOTE):
+    """Grava os pedidos em lotes, todos numa única transação:
+    ou entram todos, ou nenhum."""
+    with engine.begin() as conn:
+        for inicio in range(0, len(pedidos), tamanho_lote):
+            conn.execute(insert(TABELA_PEDIDO), pedidos[inicio:inicio + tamanho_lote])
 
 
 def parse_data(valor):
@@ -190,33 +211,12 @@ def processar_planilha_upload(arquivo, sessao_id=None):
             "sessao_id": sessao_id,
         })
 
-    df_validos = pd.DataFrame(validos)
     df_rejeitados = pd.DataFrame(rejeitados)
 
-    if not df_validos.empty:
-        with engine.begin() as conn:
-            for _, row in df_validos.iterrows():
-                dados = row.to_dict()
-                # O pandas troca None por NaN quando a coluna mistura números e vazios,
-                # e o PostgreSQL não aceita NaN em coluna inteira: volta para None/int.
-                id_origem = dados["id_pedido_origem"]
-                dados["id_pedido_origem"] = None if pd.isna(id_origem) else int(id_origem)
+    # Os pedidos válidos já estão em tipos nativos do Python (int/None, float,
+    # date, bool), prontos para o banco — sem passar por DataFrame, que trocaria
+    # o ID vazio (None) por NaN.
+    if validos:
+        gravar_pedidos(engine, validos)
 
-                conn.execute(
-                    text("""
-                        INSERT INTO pedido (
-                            id_pedido_origem, fornecedor_id, produto_id, data_compra,
-                            quantidade, preco_unitario, custo_frete,
-                            prazo_entrega_prometido_dias, tempo_entrega_real_dias,
-                            sofreu_atraso, sofreu_avaria, sessao_id
-                        ) VALUES (
-                            :id_pedido_origem, :fornecedor_id, :produto_id, :data_compra,
-                            :quantidade, :preco_unitario, :custo_frete,
-                            :prazo_entrega_prometido_dias, :tempo_entrega_real_dias,
-                            :sofreu_atraso, :sofreu_avaria, :sessao_id
-                        )
-                    """),
-                    dados,
-                )
-
-    return sessao_id, len(df_validos), len(df_rejeitados), df_rejeitados
+    return sessao_id, len(validos), len(rejeitados), df_rejeitados

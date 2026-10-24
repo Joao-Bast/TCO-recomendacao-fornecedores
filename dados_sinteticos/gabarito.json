@@ -1,0 +1,733 @@
+{
+  "semente": 2026,
+  "periodo": {
+    "inicio": "2023-10-01",
+    "fim": "2026-09-30"
+  },
+  "pedidos_por_fornecedor_por_produto": 50,
+  "observacao": "variacao_esperada_percentual usa a mesma medida do painel: preço na data mais recente dividido pela média de todo o histórico, menos 1. Não é a taxa anual do padrão.",
+  "fornecedores": [
+    {
+      "nome": "Fornecedor 1",
+      "perfil": "O mais barato, mas atrasa e avaria muito",
+      "multiplicador_preco": 0.85,
+      "frete_fixo": 35.0,
+      "frete_por_unidade": 0.4,
+      "prazo_prometido": 5,
+      "prob_atraso": 0.6,
+      "prob_avaria": 0.2,
+      "quantidade_min": 5,
+      "quantidade_max": 40
+    },
+    {
+      "nome": "Fornecedor 2",
+      "perfil": "Caro e pontual",
+      "multiplicador_preco": 1.06,
+      "frete_fixo": 35.0,
+      "frete_por_unidade": 0.4,
+      "prazo_prometido": 7,
+      "prob_atraso": 0.03,
+      "prob_avaria": 0.01,
+      "quantidade_min": 5,
+      "quantidade_max": 40
+    },
+    {
+      "nome": "Fornecedor 3",
+      "perfil": "Lote grande: frete alto por pedido, baixo por unidade; confiável",
+      "multiplicador_preco": 0.95,
+      "frete_fixo": 70.0,
+      "frete_por_unidade": 0.3,
+      "prazo_prometido": 8,
+      "prob_atraso": 0.06,
+      "prob_avaria": 0.02,
+      "quantidade_min": 100,
+      "quantidade_max": 250
+    },
+    {
+      "nome": "Fornecedor 4",
+      "perfil": "Preço bom, frete caro",
+      "multiplicador_preco": 0.94,
+      "frete_fixo": 90.0,
+      "frete_por_unidade": 1.2,
+      "prazo_prometido": 6,
+      "prob_atraso": 0.1,
+      "prob_avaria": 0.04,
+      "quantidade_min": 5,
+      "quantidade_max": 40
+    },
+    {
+      "nome": "Fornecedor 5",
+      "perfil": "Preço bom, avaria alta",
+      "multiplicador_preco": 0.95,
+      "frete_fixo": 35.0,
+      "frete_por_unidade": 0.4,
+      "prazo_prometido": 6,
+      "prob_atraso": 0.12,
+      "prob_avaria": 0.25,
+      "quantidade_min": 5,
+      "quantidade_max": 40
+    },
+    {
+      "nome": "Fornecedor 6",
+      "perfil": "Preço médio, atrasa bastante",
+      "multiplicador_preco": 1.0,
+      "frete_fixo": 35.0,
+      "frete_por_unidade": 0.4,
+      "prazo_prometido": 5,
+      "prob_atraso": 0.35,
+      "prob_avaria": 0.05,
+      "quantidade_min": 5,
+      "quantidade_max": 40
+    },
+    {
+      "nome": "Fornecedor 7",
+      "perfil": "Barato, risco moderado",
+      "multiplicador_preco": 0.92,
+      "frete_fixo": 35.0,
+      "frete_por_unidade": 0.4,
+      "prazo_prometido": 6,
+      "prob_atraso": 0.25,
+      "prob_avaria": 0.1,
+      "quantidade_min": 5,
+      "quantidade_max": 40
+    },
+    {
+      "nome": "Fornecedor 8",
+      "perfil": "Premium: o mais caro entre os confiáveis",
+      "multiplicador_preco": 1.1,
+      "frete_fixo": 35.0,
+      "frete_por_unidade": 0.4,
+      "prazo_prometido": 7,
+      "prob_atraso": 0.05,
+      "prob_avaria": 0.02,
+      "quantidade_min": 5,
+      "quantidade_max": 40
+    },
+    {
+      "nome": "Fornecedor 9",
+      "perfil": "Referência: tudo na média",
+      "multiplicador_preco": 1.0,
+      "frete_fixo": 35.0,
+      "frete_por_unidade": 0.4,
+      "prazo_prometido": 6,
+      "prob_atraso": 0.15,
+      "prob_avaria": 0.05,
+      "quantidade_min": 5,
+      "quantidade_max": 40
+    },
+    {
+      "nome": "Fornecedor 10",
+      "perfil": "O pior: caro, atrasa e avaria muito",
+      "multiplicador_preco": 1.12,
+      "frete_fixo": 35.0,
+      "frete_por_unidade": 0.4,
+      "prazo_prometido": 5,
+      "prob_atraso": 0.5,
+      "prob_avaria": 0.2,
+      "quantidade_min": 5,
+      "quantidade_max": 40
+    }
+  ],
+  "produtos": [
+    {
+      "nome": "Item A",
+      "unidade": "KG",
+      "padrao": "Alta contínua de 25% ao ano",
+      "tem_tendencia": true,
+      "variacao_esperada_percentual": 35.7,
+      "data_referencia": "2026-09-29",
+      "ranking_esperado": [
+        {
+          "posicao": 1,
+          "fornecedor": "Fornecedor 3",
+          "tco_esperado": 95.46
+        },
+        {
+          "posicao": 2,
+          "fornecedor": "Fornecedor 7",
+          "tco_esperado": 101.05
+        },
+        {
+          "posicao": 3,
+          "fornecedor": "Fornecedor 4",
+          "tco_esperado": 102.13
+        },
+        {
+          "posicao": 4,
+          "fornecedor": "Fornecedor 5",
+          "tco_esperado": 103.4
+        },
+        {
+          "posicao": 5,
+          "fornecedor": "Fornecedor 1",
+          "tco_esperado": 104.25
+        },
+        {
+          "posicao": 6,
+          "fornecedor": "Fornecedor 9",
+          "tco_esperado": 105.59
+        },
+        {
+          "posicao": 7,
+          "fornecedor": "Fornecedor 2",
+          "tco_esperado": 107.1
+        },
+        {
+          "posicao": 8,
+          "fornecedor": "Fornecedor 6",
+          "tco_esperado": 111.6
+        },
+        {
+          "posicao": 9,
+          "fornecedor": "Fornecedor 8",
+          "tco_esperado": 111.93
+        },
+        {
+          "posicao": 10,
+          "fornecedor": "Fornecedor 10",
+          "tco_esperado": 133.03
+        }
+      ]
+    },
+    {
+      "nome": "Item B",
+      "unidade": "KG",
+      "padrao": "Alta contínua de 10% ao ano",
+      "tem_tendencia": true,
+      "variacao_esperada_percentual": 14.6,
+      "data_referencia": "2026-09-30",
+      "ranking_esperado": [
+        {
+          "posicao": 1,
+          "fornecedor": "Fornecedor 3",
+          "tco_esperado": 104.11
+        },
+        {
+          "posicao": 2,
+          "fornecedor": "Fornecedor 7",
+          "tco_esperado": 110.02
+        },
+        {
+          "posicao": 3,
+          "fornecedor": "Fornecedor 4",
+          "tco_esperado": 110.82
+        },
+        {
+          "posicao": 4,
+          "fornecedor": "Fornecedor 5",
+          "tco_esperado": 112.59
+        },
+        {
+          "posicao": 5,
+          "fornecedor": "Fornecedor 1",
+          "tco_esperado": 113.49
+        },
+        {
+          "posicao": 6,
+          "fornecedor": "Fornecedor 9",
+          "tco_esperado": 114.99
+        },
+        {
+          "posicao": 7,
+          "fornecedor": "Fornecedor 2",
+          "tco_esperado": 116.65
+        },
+        {
+          "posicao": 8,
+          "fornecedor": "Fornecedor 6",
+          "tco_esperado": 121.53
+        },
+        {
+          "posicao": 9,
+          "fornecedor": "Fornecedor 8",
+          "tco_esperado": 121.91
+        },
+        {
+          "posicao": 10,
+          "fornecedor": "Fornecedor 10",
+          "tco_esperado": 144.9
+        }
+      ]
+    },
+    {
+      "nome": "Item C",
+      "unidade": "KG",
+      "padrao": "Queda contínua de 10% ao ano",
+      "tem_tendencia": true,
+      "variacao_esperada_percentual": -15.0,
+      "data_referencia": "2026-09-30",
+      "ranking_esperado": [
+        {
+          "posicao": 1,
+          "fornecedor": "Fornecedor 3",
+          "tco_esperado": 85.7
+        },
+        {
+          "posicao": 2,
+          "fornecedor": "Fornecedor 7",
+          "tco_esperado": 90.92
+        },
+        {
+          "posicao": 3,
+          "fornecedor": "Fornecedor 4",
+          "tco_esperado": 92.32
+        },
+        {
+          "posicao": 4,
+          "fornecedor": "Fornecedor 5",
+          "tco_esperado": 93.02
+        },
+        {
+          "posicao": 5,
+          "fornecedor": "Fornecedor 1",
+          "tco_esperado": 93.83
+        },
+        {
+          "posicao": 6,
+          "fornecedor": "Fornecedor 9",
+          "tco_esperado": 94.98
+        },
+        {
+          "posicao": 7,
+          "fornecedor": "Fornecedor 2",
+          "tco_esperado": 96.33
+        },
+        {
+          "posicao": 8,
+          "fornecedor": "Fornecedor 6",
+          "tco_esperado": 100.39
+        },
+        {
+          "posicao": 9,
+          "fornecedor": "Fornecedor 8",
+          "tco_esperado": 100.66
+        },
+        {
+          "posicao": 10,
+          "fornecedor": "Fornecedor 10",
+          "tco_esperado": 119.63
+        }
+      ]
+    },
+    {
+      "nome": "Item D",
+      "unidade": "KG",
+      "padrao": "Queda contínua de 20% ao ano",
+      "tem_tendencia": true,
+      "variacao_esperada_percentual": -28.7,
+      "data_referencia": "2026-09-24",
+      "ranking_esperado": [
+        {
+          "posicao": 1,
+          "fornecedor": "Fornecedor 3",
+          "tco_esperado": 18.21
+        },
+        {
+          "posicao": 2,
+          "fornecedor": "Fornecedor 7",
+          "tco_esperado": 20.9
+        },
+        {
+          "posicao": 3,
+          "fornecedor": "Fornecedor 5",
+          "tco_esperado": 21.32
+        },
+        {
+          "posicao": 4,
+          "fornecedor": "Fornecedor 9",
+          "tco_esperado": 21.66
+        },
+        {
+          "posicao": 5,
+          "fornecedor": "Fornecedor 1",
+          "tco_esperado": 21.75
+        },
+        {
+          "posicao": 6,
+          "fornecedor": "Fornecedor 2",
+          "tco_esperado": 21.85
+        },
+        {
+          "posicao": 7,
+          "fornecedor": "Fornecedor 8",
+          "tco_esperado": 22.75
+        },
+        {
+          "posicao": 8,
+          "fornecedor": "Fornecedor 6",
+          "tco_esperado": 22.89
+        },
+        {
+          "posicao": 9,
+          "fornecedor": "Fornecedor 4",
+          "tco_esperado": 24.5
+        },
+        {
+          "posicao": 10,
+          "fornecedor": "Fornecedor 10",
+          "tco_esperado": 27.0
+        }
+      ]
+    },
+    {
+      "nome": "Item E",
+      "unidade": "KG",
+      "padrao": "Estável e salto de +40% nos últimos 6 meses",
+      "tem_tendencia": true,
+      "variacao_esperada_percentual": 32.8,
+      "data_referencia": "2026-09-28",
+      "ranking_esperado": [
+        {
+          "posicao": 1,
+          "fornecedor": "Fornecedor 3",
+          "tco_esperado": 82.3
+        },
+        {
+          "posicao": 2,
+          "fornecedor": "Fornecedor 7",
+          "tco_esperado": 87.4
+        },
+        {
+          "posicao": 3,
+          "fornecedor": "Fornecedor 4",
+          "tco_esperado": 88.9
+        },
+        {
+          "posicao": 4,
+          "fornecedor": "Fornecedor 5",
+          "tco_esperado": 89.41
+        },
+        {
+          "posicao": 5,
+          "fornecedor": "Fornecedor 1",
+          "tco_esperado": 90.2
+        },
+        {
+          "posicao": 6,
+          "fornecedor": "Fornecedor 9",
+          "tco_esperado": 91.29
+        },
+        {
+          "posicao": 7,
+          "fornecedor": "Fornecedor 2",
+          "tco_esperado": 92.58
+        },
+        {
+          "posicao": 8,
+          "fornecedor": "Fornecedor 6",
+          "tco_esperado": 96.49
+        },
+        {
+          "posicao": 9,
+          "fornecedor": "Fornecedor 8",
+          "tco_esperado": 96.74
+        },
+        {
+          "posicao": 10,
+          "fornecedor": "Fornecedor 10",
+          "tco_esperado": 114.97
+        }
+      ]
+    },
+    {
+      "nome": "Item F",
+      "unidade": "LITROS",
+      "padrao": "Estável e queda brusca de -30% no último ano",
+      "tem_tendencia": true,
+      "variacao_esperada_percentual": -22.5,
+      "data_referencia": "2026-09-30",
+      "ranking_esperado": [
+        {
+          "posicao": 1,
+          "fornecedor": "Fornecedor 3",
+          "tco_esperado": 31.33
+        },
+        {
+          "posicao": 2,
+          "fornecedor": "Fornecedor 7",
+          "tco_esperado": 34.51
+        },
+        {
+          "posicao": 3,
+          "fornecedor": "Fornecedor 5",
+          "tco_esperado": 35.25
+        },
+        {
+          "posicao": 4,
+          "fornecedor": "Fornecedor 1",
+          "tco_esperado": 35.76
+        },
+        {
+          "posicao": 5,
+          "fornecedor": "Fornecedor 9",
+          "tco_esperado": 35.91
+        },
+        {
+          "posicao": 6,
+          "fornecedor": "Fornecedor 2",
+          "tco_esperado": 36.32
+        },
+        {
+          "posicao": 7,
+          "fornecedor": "Fornecedor 4",
+          "tco_esperado": 37.68
+        },
+        {
+          "posicao": 8,
+          "fornecedor": "Fornecedor 8",
+          "tco_esperado": 37.89
+        },
+        {
+          "posicao": 9,
+          "fornecedor": "Fornecedor 6",
+          "tco_esperado": 37.95
+        },
+        {
+          "posicao": 10,
+          "fornecedor": "Fornecedor 10",
+          "tco_esperado": 45.0
+        }
+      ]
+    },
+    {
+      "nome": "Item G",
+      "unidade": "LITROS",
+      "padrao": "Sazonal (±15% ao longo do ano), sem tendência de longo prazo",
+      "tem_tendencia": true,
+      "variacao_esperada_percentual": -13.1,
+      "data_referencia": "2026-09-30",
+      "ranking_esperado": [
+        {
+          "posicao": 1,
+          "fornecedor": "Fornecedor 3",
+          "tco_esperado": 21.86
+        },
+        {
+          "posicao": 2,
+          "fornecedor": "Fornecedor 7",
+          "tco_esperado": 24.69
+        },
+        {
+          "posicao": 3,
+          "fornecedor": "Fornecedor 5",
+          "tco_esperado": 25.19
+        },
+        {
+          "posicao": 4,
+          "fornecedor": "Fornecedor 9",
+          "tco_esperado": 25.62
+        },
+        {
+          "posicao": 5,
+          "fornecedor": "Fornecedor 1",
+          "tco_esperado": 25.65
+        },
+        {
+          "posicao": 6,
+          "fornecedor": "Fornecedor 2",
+          "tco_esperado": 25.87
+        },
+        {
+          "posicao": 7,
+          "fornecedor": "Fornecedor 8",
+          "tco_esperado": 26.96
+        },
+        {
+          "posicao": 8,
+          "fornecedor": "Fornecedor 6",
+          "tco_esperado": 27.08
+        },
+        {
+          "posicao": 9,
+          "fornecedor": "Fornecedor 4",
+          "tco_esperado": 28.17
+        },
+        {
+          "posicao": 10,
+          "fornecedor": "Fornecedor 10",
+          "tco_esperado": 32.01
+        }
+      ]
+    },
+    {
+      "nome": "Item H",
+      "unidade": "LITROS",
+      "padrao": "Alta de 15% ao ano com sazonalidade de ±10%",
+      "tem_tendencia": true,
+      "variacao_esperada_percentual": 12.6,
+      "data_referencia": "2026-09-30",
+      "ranking_esperado": [
+        {
+          "posicao": 1,
+          "fornecedor": "Fornecedor 3",
+          "tco_esperado": 122.1
+        },
+        {
+          "posicao": 2,
+          "fornecedor": "Fornecedor 7",
+          "tco_esperado": 128.69
+        },
+        {
+          "posicao": 3,
+          "fornecedor": "Fornecedor 4",
+          "tco_esperado": 128.9
+        },
+        {
+          "posicao": 4,
+          "fornecedor": "Fornecedor 5",
+          "tco_esperado": 131.7
+        },
+        {
+          "posicao": 5,
+          "fornecedor": "Fornecedor 1",
+          "tco_esperado": 132.71
+        },
+        {
+          "posicao": 6,
+          "fornecedor": "Fornecedor 9",
+          "tco_esperado": 134.54
+        },
+        {
+          "posicao": 7,
+          "fornecedor": "Fornecedor 2",
+          "tco_esperado": 136.51
+        },
+        {
+          "posicao": 8,
+          "fornecedor": "Fornecedor 6",
+          "tco_esperado": 142.19
+        },
+        {
+          "posicao": 9,
+          "fornecedor": "Fornecedor 8",
+          "tco_esperado": 142.68
+        },
+        {
+          "posicao": 10,
+          "fornecedor": "Fornecedor 10",
+          "tco_esperado": 169.6
+        }
+      ]
+    },
+    {
+      "nome": "Item I",
+      "unidade": "LITROS",
+      "padrao": "Alta de 15% ao ano com muito ruído (caso difícil)",
+      "tem_tendencia": true,
+      "variacao_esperada_percentual": 22.7,
+      "data_referencia": "2026-09-30",
+      "ranking_esperado": [
+        {
+          "posicao": 1,
+          "fornecedor": "Fornecedor 3",
+          "tco_esperado": 104.08
+        },
+        {
+          "posicao": 2,
+          "fornecedor": "Fornecedor 7",
+          "tco_esperado": 109.99
+        },
+        {
+          "posicao": 3,
+          "fornecedor": "Fornecedor 4",
+          "tco_esperado": 110.79
+        },
+        {
+          "posicao": 4,
+          "fornecedor": "Fornecedor 5",
+          "tco_esperado": 112.56
+        },
+        {
+          "posicao": 5,
+          "fornecedor": "Fornecedor 1",
+          "tco_esperado": 113.46
+        },
+        {
+          "posicao": 6,
+          "fornecedor": "Fornecedor 9",
+          "tco_esperado": 114.96
+        },
+        {
+          "posicao": 7,
+          "fornecedor": "Fornecedor 2",
+          "tco_esperado": 116.62
+        },
+        {
+          "posicao": 8,
+          "fornecedor": "Fornecedor 6",
+          "tco_esperado": 121.5
+        },
+        {
+          "posicao": 9,
+          "fornecedor": "Fornecedor 8",
+          "tco_esperado": 121.88
+        },
+        {
+          "posicao": 10,
+          "fornecedor": "Fornecedor 10",
+          "tco_esperado": 144.87
+        }
+      ]
+    },
+    {
+      "nome": "Item J",
+      "unidade": "LITROS",
+      "padrao": "Só ruído, sem tendência (controle negativo)",
+      "tem_tendencia": false,
+      "variacao_esperada_percentual": 0.0,
+      "data_referencia": "2026-09-30",
+      "ranking_esperado": [
+        {
+          "posicao": 1,
+          "fornecedor": "Fornecedor 3",
+          "tco_esperado": 97.83
+        },
+        {
+          "posicao": 2,
+          "fornecedor": "Fornecedor 7",
+          "tco_esperado": 103.51
+        },
+        {
+          "posicao": 3,
+          "fornecedor": "Fornecedor 4",
+          "tco_esperado": 104.51
+        },
+        {
+          "posicao": 4,
+          "fornecedor": "Fornecedor 5",
+          "tco_esperado": 105.92
+        },
+        {
+          "posicao": 5,
+          "fornecedor": "Fornecedor 1",
+          "tco_esperado": 106.79
+        },
+        {
+          "posicao": 6,
+          "fornecedor": "Fornecedor 9",
+          "tco_esperado": 108.17
+        },
+        {
+          "posicao": 7,
+          "fornecedor": "Fornecedor 2",
+          "tco_esperado": 109.73
+        },
+        {
+          "posicao": 8,
+          "fornecedor": "Fornecedor 6",
+          "tco_esperado": 114.33
+        },
+        {
+          "posicao": 9,
+          "fornecedor": "Fornecedor 8",
+          "tco_esperado": 114.67
+        },
+        {
+          "posicao": 10,
+          "fornecedor": "Fornecedor 10",
+          "tco_esperado": 136.3
+        }
+      ]
+    }
+  ]
+}

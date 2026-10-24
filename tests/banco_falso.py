@@ -34,6 +34,7 @@ class BancoFalso:
         self.unidades = {}      # nome do produto -> unidade
         self.pedidos = []       # um dict por linha inserida em "pedido"
         self.limpezas = 0       # quantas vezes a limpeza de sessões antigas rodou
+        self.lotes = 0          # quantas viagens ao banco a gravação de pedidos fez
 
     def begin(self):
         return _Conexao(self)
@@ -54,7 +55,10 @@ class BancoFalso:
             self.unidades.setdefault(nome, parametros["unidade"])
             return _Resultado()
         if "INSERT INTO pedido" in sql:
-            self.pedidos.append(dict(parametros))
+            # a gravação em lote manda uma lista de pedidos por chamada
+            lote = parametros if isinstance(parametros, list) else [parametros]
+            self.pedidos.extend(dict(p) for p in lote)
+            self.lotes += 1
             return _Resultado()
         if "FROM fornecedor" in sql:
             return _Resultado([(i, n) for n, i in self.fornecedores.items()])
