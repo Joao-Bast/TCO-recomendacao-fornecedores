@@ -32,14 +32,15 @@ A proposta do trabalho (problema de pesquisa, hipótese, objetivos e metodologia
 
 ### Software
 
-- **Python 3.12**
+- **Python 3.12**: versão usada em produção (definida no `Dockerfile`) e nos testes do CI (definida em `.github/workflows/deploy.yml`). O desenvolvimento local também funciona com versões mais novas.
 - **Flask 3.1** (aplicação web) e **Gunicorn 26.2** (servidor em produção)
 - **pandas 3.0** e **NumPy 2.5** (tratamento de dados)
 - **scikit-learn 1.9** (modelos de aprendizado de máquina)
 - **SQLAlchemy 2.0** e **psycopg2 2.9** (acesso ao banco)
 - **openpyxl 3.1** (leitura e escrita de planilhas Excel)
+- **python-dotenv 1.2** (leitura das configurações do arquivo `.env`)
 
-Todas as versões estão fixadas em `requirements.txt`, incluindo as dependências indiretas.
+As versões exatas estão fixadas em `requirements.txt`. Esse arquivo também lista as dependências indiretas, que são instaladas automaticamente junto com as principais (por exemplo, o Flask traz Werkzeug e Jinja2, e o scikit-learn traz SciPy e joblib). Fixar também essas garante que todo build instale exatamente as mesmas versões.
 
 ### Banco de Dados
 
