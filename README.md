@@ -538,10 +538,7 @@ docker run -p 8080:8080 --env-file .env -e DB_HOST=host.docker.internal tco-app
 
 ## Trabalhos Futuros
 
-- **Usar o fornecedor como informação do modelo**, com modelos hierárquicos que aproveitem o histórico de todos sem depender de amostras grandes por fornecedor. Isso reduziria o ruído que hoje limita o R².
 - **Previsão do preço futuro** (próximos meses), além do patamar atual.
-- **Histórico de recomendações**, usando a tabela `recomendacao_gerada`, já criada no banco.
-- **Contas de usuário** para guardar o histórico entre sessões.
 - **Verificação das dependências por hash**, completando a fixação de versões.
 - **Cobertura de testes no SonarCloud**, migrando a análise para o pipeline do GitHub Actions.
 - **Servidor e banco na mesma região** (São Paulo), para reduzir a latência.
