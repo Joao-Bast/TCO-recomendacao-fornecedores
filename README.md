@@ -378,6 +378,8 @@ Quatro alertas foram **aceitos com justificativa**, porque não representam risc
 - **Retenção limitada.** A cada novo upload, o sistema apaga as sessões com mais de 24 horas. A limpeza é disparada por novos envios, e não por um agendamento: se ninguém enviar uma planilha, os dados antigos permanecem no banco, isolados, até o próximo envio. A limpeza agendada está prevista em Trabalhos Futuros.
 - **Dados reais fora do repositório.** A base real da empresa, usada com autorização, foi analisada para validar a metodologia e não está publicada. O repositório público contém apenas a base sintética.
 
+---
+
 ## Registro de Decisões (ADR / Histórico)
 
 - **Aprendizado de máquina por produto, e não por fornecedor:** cada fornecedor tem poucos pedidos por produto, insuficientes para treinar um modelo. O modelo aprende a tendência do produto com os pedidos de todos os fornecedores, e o TCO de cada fornecedor é calculado por estatística descritiva.
@@ -461,7 +463,7 @@ Os valores foram obtidos com a planilha adaptada e podem variar na casa decimal 
 - **Ácido Sulfúrico PA** passou no critério de confiança (R² maior que zero) por uma margem pequena. A variação é praticamente nula, coerente com um preço estável, e o painel mostra que o modelo explica apenas cerca de 7% da variação.
 - **Cloreto de Sódio PA** também passou por pouco. A variação de −37,6% é grande em relação à sustentação que o modelo tem (cerca de 6% da variação explicada), então deve ser lida como um sinal indicativo, e não como uma previsão precisa. O painel mostra o R² ao lado do resultado justamente para que o usuário avalie o quanto confiar.
 
-O sinal nos dados reais é mais fraco do que na base sintética (R² máximo de 0,52, contra 0,81 no Item A sintético). O preço real também depende de fatores que o modelo não observa, como contratos, descontos e a troca entre fornecedores ao longo do tempo.
+O sinal nos dados reais é mais fraco do que na base sintetica, devido a pouca quantidade de pedidos. 
 
 **Leitura conjunta:** a base sintética mostra que o método encontra a tendência quando ela existe e a recusa quando não existe. A base real mostra o método em condições práticas: um produto com sinal forte, um estável e um com sinal fraco. Em todos, o sistema informa junto do resultado o quanto o modelo explica, para que a decisão final seja do comprador.
 
