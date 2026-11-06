@@ -263,7 +263,7 @@ O sistema não foi construído para uma empresa específica. Ele funciona com o 
 - Qualquer pessoa pode baixar a planilha-modelo, preencher com seus dados e receber recomendações, **sem cadastro**.
 - Produtos e fornecedores novos entram automaticamente pela planilha, sem nenhuma mudança no código.
 - Cada envio recebe uma **sessão isolada**: um usuário nunca vê os dados de outro.
-- Os dados enviados são **apagados automaticamente após 24 horas**, o que reduz a retenção de dados de terceiros.
+- Os dados enviados são **removidos automaticamente**: a cada novo upload, o sistema apaga as sessões com mais de **24 horas**, o que limita a retenção de dados de terceiros.
 - As regras do negócio ficam em constantes no topo dos módulos e são fáceis de ajustar: pesos do TCO, mínimo de 70 pedidos, critério de confiança do modelo, tamanho do lote e tempo de retenção.
 
 ---
@@ -358,6 +358,26 @@ Quatro alertas foram **aceitos com justificativa**, porque não representam risc
 
 ---
 
+## Segurança e Privacidade
+
+### Segurança
+
+- **Nenhuma senha no código.** Em produção, a senha do banco e a chave de sessão do Flask ficam no Secret Manager. No desenvolvimento, ficam num arquivo `.env`, que está no `.gitignore`.
+- **Deploy sem chave armazenada.** O GitHub Actions se autentica no Google Cloud por **Workload Identity Federation**: não existe chave de conta de serviço guardada em nenhum lugar, e a permissão vale só para este repositório.
+- **Permissões restritas.** A conta usada no deploy tem papéis limitados aos serviços necessários (Cloud Run, Cloud Build e Artifact Registry), sem papel de administrador do projeto.
+- **Banco fora da internet pública.** A aplicação se conecta ao Cloud SQL por socket interno do Google Cloud, e a senha vem do Secret Manager.
+- **Proteção contra injeção de HTML.** Todo texto vindo da planilha (como nomes de fornecedores) e todas as mensagens de erro são tratados antes de aparecer na tela, então uma planilha não consegue executar código na página.
+- **Contêiner sem privilégios.** A imagem Docker executa a aplicação com um usuário comum, e não como root.
+- **Dados reais fora da imagem.** O `.dockerignore` impede que `.env` e dados reais entrem na imagem.
+- **Modo debug desligado em produção.** Ele só é ativado localmente, pela variável `FLASK_DEBUG`.
+
+### Privacidade e LGPD
+
+- **Sem cadastro e sem dados pessoais.** O sistema trabalha só com dados de compras (fornecedores, produtos, preços e prazos).
+- **Isolamento por sessão.** Cada upload recebe um identificador aleatório (UUID), guardado num cookie assinado pelo Flask. Todas as consultas filtram por esse identificador, então um usuário não vê os dados de outro.
+- **Retenção limitada.** A cada novo upload, o sistema apaga as sessões com mais de 24 horas. A limpeza é disparada por novos envios, e não por um agendamento: se ninguém enviar uma planilha, os dados antigos permanecem no banco, isolados, até o próximo envio. A limpeza agendada está prevista em Trabalhos Futuros.
+- **Dados reais fora do repositório.** A base real da empresa, usada com autorização, foi analisada para validar a metodologia e não está publicada. O repositório público contém apenas a base sintética.
+
 ## Registro de Decisões (ADR / Histórico)
 
 - **Aprendizado de máquina por produto, e não por fornecedor:** cada fornecedor tem poucos pedidos por produto, insuficientes para treinar um modelo. O modelo aprende a tendência do produto com os pedidos de todos os fornecedores, e o TCO de cada fornecedor é calculado por estatística descritiva.
@@ -411,12 +431,39 @@ A "variação" usa a mesma medida exibida no sistema: o preço de referência at
 
 ### Aplicação com a Base Real
 
-O sistema também foi aplicado a uma base real de compras de uma empresa, com autorização. Os dados não estão publicados neste repositório.
+O sistema também foi aplicado a uma base real de compras de três reagentes químicos de uma empresa, com autorização. Os dados não estão publicados neste repositório.
 
-- **Qualidade dos dados:** de 312 linhas, 303 foram aproveitadas. As 9 rejeitadas tinham 3 datas com erro de digitação, 3 datas fora do intervalo aceito e 3 IDs duplicados. A análise mostrou que os IDs em branco não eram aleatórios: eles se concentravam nos anos mais recentes (21% em 2024, 31% em 2025 e 20% em 2026). Por isso, a regra que descartava essas linhas foi revista, para não perder justamente os dados mais relevantes para a tendência.
-- **Modelo:** o R² dos três produtos ficou entre **0,06 e 0,32**. O sinal de tendência nos dados reais é mais fraco do que na base sintética, porque o preço real também depende de fatores que o modelo não observa, como contratos, descontos e a troca entre fornecedores ao longo do tempo. O critério de confiança protege a recomendação nesses casos.
+A planilha original precisou de uma única adaptação de formato: as colunas separadas de KG e Litros viraram `Quantidade` e `Preco_Unitario`, com a unidade em `Unidade_Medida`. Nenhum valor foi alterado. Os erros originais foram mantidos de propósito (datas digitadas errado, IDs repetidos e IDs em branco), para que o teste refletisse dados reais. Em seguida, a planilha passou pelo mesmo fluxo de upload de qualquer usuário.
 
-**Leitura conjunta:** a base sintética mostra que o método funciona quando o sinal existe; a base real mostra, com honestidade, que nos dados práticos o sinal é mais fraco e que o sistema se protege disso.
+**Perfil da base**
+
+- 312 pedidos de 3 produtos (dois comprados em litros e um em quilos), de 9 fornecedores, entre 2014 e 2026.
+- O histórico é desigual: 239 pedidos (77%) são de 2023 em diante, e até 2019 há no máximo 8 pedidos por ano.
+- Dos pedidos aproveitados, cerca de 36% sofreram atraso e 7% sofreram avaria.
+- Os fornecedores têm entre 6 e 75 pedidos no total. Dois deles têm menos de 10 pedidos em qualquer produto e aparecem com o aviso "amostra pequena".
+
+**Qualidade dos dados**
+
+- **306 das 312 linhas (98%) foram aproveitadas.** As 6 rejeitadas aparecem no sistema com o motivo: 3 datas com erro de digitação (como `29/05/20219`) e 3 IDs duplicados.
+- 52 linhas (17%) tinham `ID_Pedido` em branco e foram aceitas, porque o campo é opcional. Esses IDs em branco não eram aleatórios: concentravam-se nos anos mais recentes (21% dos pedidos de 2024, 31% dos de 2025 e 20% dos de 2026). A regra inicial do projeto descartava essas linhas, o que eliminava justamente os dados mais relevantes para a tendência. A regra foi revista, e as linhas passaram a ser aproveitadas.
+
+**Tendência do preço**
+
+| Produto | Pedidos | Variação | Modelo vencedor | R² | Leitura |
+|:--|--:|--:|:--|--:|:--|
+| Ácido Clorídrico PA | 108 | +103,3% | Random Forest | 0,52 | Sinal forte: o preço atual é mais que o dobro da média histórica |
+| Ácido Sulfúrico PA | 98 | +0,2% | Regressão Linear | 0,07 | Preço praticamente estável; o modelo explica pouco |
+| Cloreto de Sódio PA | 100 | −37,6% | Regressão Linear | 0,06 | Sinal fraco: deve ser lido como indicativo |
+
+Os valores foram obtidos com a planilha adaptada e podem variar na casa decimal conforme a versão do scikit-learn.
+
+- **Ácido Clorídrico PA** é o caso em que o aprendizado de máquina faz diferença na prática. A média histórica equivale a cerca de metade do preço de referência atual: um comprador que negociasse pela média trabalharia com um número muito abaixo do mercado atual. O painel entrega o patamar atual como base para a negociação.
+- **Ácido Sulfúrico PA** passou no critério de confiança (R² maior que zero) por uma margem pequena. A variação é praticamente nula, coerente com um preço estável, e o painel mostra que o modelo explica apenas cerca de 7% da variação.
+- **Cloreto de Sódio PA** também passou por pouco. A variação de −37,6% é grande em relação à sustentação que o modelo tem (cerca de 6% da variação explicada), então deve ser lida como um sinal indicativo, e não como uma previsão precisa. O painel mostra o R² ao lado do resultado justamente para que o usuário avalie o quanto confiar.
+
+O sinal nos dados reais é mais fraco do que na base sintética (R² máximo de 0,52, contra 0,81 no Item A sintético). O preço real também depende de fatores que o modelo não observa, como contratos, descontos e a troca entre fornecedores ao longo do tempo.
+
+**Leitura conjunta:** a base sintética mostra que o método encontra a tendência quando ela existe e a recusa quando não existe. A base real mostra o método em condições práticas: um produto com sinal forte, um estável e um com sinal fraco. Em todos, o sistema informa junto do resultado o quanto o modelo explica, para que a decisão final seja do comprador.
 
 ### Desempenho em Produção
 
