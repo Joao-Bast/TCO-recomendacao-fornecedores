@@ -39,6 +39,7 @@ A proposta do trabalho (problema de pesquisa, hipótese, objetivos e metodologia
 - **SQLAlchemy 2.0** e **psycopg2 2.9** (acesso ao banco)
 - **openpyxl 3.1** (leitura e escrita de planilhas Excel)
 - **python-dotenv 1.2** (leitura das configurações do arquivo `.env`)
+- - **New Relic (agente Python) 14.2** (monitoramento em produção)
 
 As versões exatas estão fixadas em `requirements.txt`. Esse arquivo também lista as dependências indiretas, que são instaladas automaticamente junto com as principais (por exemplo, o Flask traz Werkzeug e Jinja2, e o scikit-learn traz SciPy e joblib). Fixar também essas garante que todo build instale exatamente as mesmas versões.
 
@@ -56,6 +57,7 @@ As versões exatas estão fixadas em `requirements.txt`. Esse arquivo também li
 - **Google Cloud Run** (hospedagem), **Cloud SQL** (banco) e **Secret Manager** (senhas)
 - **GitHub Actions** (CI/CD: testes antes de cada deploy)
 - **SonarCloud** (análise estática de código)
+- - **New Relic** (monitoramento e observabilidade)
 
 ### Plataforma Alvo
 
@@ -270,14 +272,15 @@ O sistema não foi construído para uma empresa específica. Ele funciona com o 
 
 ## Testes Automatizados
 
-O projeto tem **148 testes automatizados** (pytest), que rodam a cada push no GitHub Actions. O deploy só acontece se todos passarem. Nenhum teste depende do banco de dados real: as consultas são substituídas por um banco falso em memória.
+O projeto tem **159 testes automatizados** (pytest), que rodam a cada push no GitHub Actions. O deploy só acontece se todos passarem. Nenhum teste depende do banco de dados real: as consultas são substituídas por um banco falso em memória.
 
 | Arquivo | Testes | O que cobre |
 |:--|:--:|:--|
 | `tests/test_upload.py` | 45 | Conversões de valores, contrato com a planilha-modelo e o fluxo completo do upload com dados problemáticos |
 | `tests/test_modelo.py` | 20 | Regra dos 70 pedidos, critério de confiança (R²), reprodutibilidade, tendência e série mensal |
 | `tests/test_tco.py` | 21 | Fórmula do TCO, ordenação do ranking, ajuste de tendência e campos lidos pela interface |
-| `tests/test_rotas.py` | 15 | Rotas HTTP, códigos de erro e isolamento entre sessões de usuários diferentes |
+| `tests/test_rotas.py` | 18 | Rotas HTTP, códigos de erro, isolamento entre sessões de usuários diferentes e a rota de saúde (`/saude`) |
+| `tests/test_monitoramento.py` | 8 | Envio de métricas ao New Relic: só com a licença configurada, nunca derruba a aplicação e não envia dados de pedidos |
 | `tests/test_dados_sinteticos.py` | 47 | Validação do sistema completo com a base sintética de resultado conhecido |
 
 Durante a escrita dos testes, foram encontrados e corrigidos dois defeitos reais: uma data em branco passava como válida, e um `ID_Pedido` em branco era enviado ao banco como `NaN`.
@@ -319,7 +322,7 @@ pytest
 
 A cada push na branch `master`, o GitHub Actions executa dois jobs em sequência:
 
-1. **Testes:** instala as dependências (só pacotes pré-compilados) e roda os 148 testes com Python 3.12, a mesma versão da imagem Docker.
+1. **Testes:** instala as dependências (só pacotes pré-compilados) e roda os 159 testes com Python 3.12, a mesma versão da imagem Docker.
 2. **Deploy:** roda só se os testes passarem. Ele se autentica no Google Cloud sem chave armazenada (Workload Identity Federation) e publica a nova versão no Cloud Run.
 
 As ações do GitHub usadas no pipeline estão fixadas pelo hash do commit, e o sistema operacional do executor também está fixado (`ubuntu-24.04`).
@@ -377,6 +380,44 @@ Quatro alertas foram **aceitos com justificativa**, porque não representam risc
 - **Isolamento por sessão.** Cada upload recebe um identificador aleatório (UUID), guardado num cookie assinado pelo Flask. Todas as consultas filtram por esse identificador, então um usuário não vê os dados de outro.
 - **Retenção limitada.** A cada novo upload, o sistema apaga as sessões com mais de 24 horas. A limpeza é disparada por novos envios, e não por um agendamento: se ninguém enviar uma planilha, os dados antigos permanecem no banco, isolados, até o próximo envio. A limpeza agendada está prevista em Trabalhos Futuros.
 - **Dados reais fora do repositório.** A base real da empresa, usada com autorização, foi analisada para validar a metodologia e não está publicada. O repositório público contém apenas a base sintética.
+- **Telemetria sem dados de compras.** O monitoramento envia dados a um serviço de terceiros (New Relic), mas só contagens, tempos e o resultado do modelo. Nomes de produtos e fornecedores, o conteúdo das planilhas e o texto das consultas ao banco não são enviados.
+
+---
+
+## Monitoramento
+
+A aplicação em produção é monitorada com o **New Relic**, uma das ferramentas de observabilidade indicadas pela disciplina. O agente do New Relic envolve o servidor Gunicorn dentro do contêiner e envia os dados de desempenho. A chave de acesso fica no Secret Manager.
+
+```mermaid
+flowchart LR
+    U["Usuário"] --> CR["Cloud Run<br/>Gunicorn + agente New Relic"]
+    CR -->|"latência, erros, throughput"| NR["New Relic<br/>dashboard"]
+    CR -->|"eventos de negócio"| NR
+    CR -->|"stdout/stderr"| CL["Cloud Logging"]
+    SM["Secret Manager<br/>chave do New Relic"] --> CR
+```
+
+**O que é monitorado**
+
+- **Métricas automáticas de HTTP:** tempo de resposta por rota, taxa de erro e volume de requisições.
+- **Métricas próprias da parte de IA:**
+  - tempo de cálculo da tendência, que inclui a leitura do histórico e o treino dos três modelos;
+  - percentual de tendências em que o modelo foi aceito e, quando não foi, o motivo (poucos pedidos ou nenhum modelo superou a média);
+  - percentual de linhas rejeitadas em cada upload.
+- **Rota de saúde (`/saude`):** confere se a aplicação consegue falar com o banco e responde 200 ou 503, sem expor detalhes do erro.
+- **Logs:** a saída da aplicação continua no Cloud Logging.
+
+![Dashboard no New Relic](docs/imagens/newrelic-dashboard.png)
+
+**Exemplo de leitura.** Numa sessão de testes em produção com a base sintética e a base real, o dashboard registrou:
+
+- tempo de cálculo da tendência de até cerca de 1,6 s por produto, que inclui o treino dos três modelos;
+- 9 de 11 cálculos de tendência aceitos pelo modelo, e as 2 recusas pelo mesmo motivo (nenhum modelo superou a média histórica), que correspondem ao controle sem tendência;
+- 6 linhas rejeitadas no upload da planilha real, que correspondem aos 3 erros de data e aos 3 IDs duplicados já conhecidos.
+
+**Privacidade da telemetria.** Os dados de monitoramento vão para um serviço de terceiros, então o agente foi configurado para **não enviar**: o texto das consultas SQL, as mensagens de exceção e os logs da aplicação. O conteúdo das planilhas também não é enviado. Os eventos de negócio carregam apenas contagens, tempos e o resultado do modelo, sem nenhum nome de produto ou fornecedor. Sem a chave de acesso (desenvolvimento local e testes), o código de monitoramento não faz nada.
+
+**Limites desta versão.** Não há alertas configurados nem instância sempre ligada. Como o Cloud Run reduz o processamento entre requisições, os dados do último minuto antes de a instância ser desligada podem chegar atrasados ou se perder.
 
 ---
 
@@ -394,7 +435,7 @@ Quatro alertas foram **aceitos com justificativa**, porque não representam risc
 - **Dados reais da empresa fora do repositório:** a base real foi usada só localmente, para validar a metodologia. O repositório público contém apenas a base sintética.
 - **Google Cloud Run com Docker:** a disciplina não permite plataformas como Render, Vercel e Netlify. O Cloud Run executa a imagem Docker do projeto, com o banco no Cloud SQL.
 - **Senhas no Secret Manager e deploy sem chave (Workload Identity Federation):** nenhuma senha fica no código, nas variáveis em texto puro ou nos segredos do GitHub.
-- **Gravação em lote no upload:** com uma linha por viagem ao banco, planilhas grandes ficavam lentas, porque o servidor e o banco estão em regiões diferentes.
+- **Gravação em lote no upload** | Com uma linha por viagem ao banco, planilhas grandes ficavam lentas, porque cada linha exigia uma ida e volta à rede até o banco. Em lotes de 500, uma planilha de 5.000 pedidos é gravada em 10 viagens. |
 
 ---
 
@@ -470,7 +511,7 @@ O sinal nos dados reais é mais fraco do que na base sintetica, devido a pouca q
 ### Desempenho em Produção
 
 - Planilha de **5.000 pedidos** processada em cerca de **15 segundos** no sistema publicado.
-- Pipeline completo (148 testes e deploy) em cerca de **3 minutos**.
+- Pipeline completo (159 testes e deploy) em cerca de **3 minutos**.
 
 ---
 
@@ -590,5 +631,6 @@ docker run -p 8080:8080 --env-file .env -e DB_HOST=host.docker.internal tco-app
 - **Previsão do preço futuro** (próximos meses), além do patamar atual.
 - **Verificação das dependências por hash**, completando a fixação de versões.
 - **Cobertura de testes no SonarCloud**, migrando a análise para o pipeline do GitHub Actions.
-- **Servidor e banco na mesma região** (São Paulo), para reduzir a latência.
 - **Integração com sistemas ERP** e dados em tempo real, como previsto no artigo.
+- **Alertas** sobre taxa de erro e latência alta, depois de observar o tráfego real para definir os limites.
+- **Verificação periódica de disponibilidade** (rota `/saude`) com um monitor sintético, e instância mínima ligada no Cloud Run durante períodos de uso, para não perder dados de monitoramento.
