@@ -5,7 +5,8 @@
 Sistema web que recomenda os melhores fornecedores para cada produto com base no **Custo Total de Aquisição (TCO)**, e não apenas no menor preço. A partir do histórico de compras enviado pelo usuário, o sistema calcula o custo real de cada fornecedor (preço, frete por unidade e o custo dos riscos de atraso e avaria) e usa **aprendizado de máquina** para estimar a tendência de preço de cada produto.
 
 **Sistema no ar:** https://tco-app-254798258391.us-central1.run.app
-**Vídeo de demonstração:** [![Demonstração do sistema](https://img.youtube.com/vi/vxYdkz-QFhU   /hqdefault.jpg)](https://www.youtube.com/watch?v=vxYdkz-QFhU)
+
+**Vídeo de demonstração:** (https://img.youtube.com/vi/vxYdkz-QFhU/hqdefault.jpg)](https://www.youtube.com/watch?v=vxYdkz-QFhU)
 
 Trabalho de Conclusão de Curso de Engenharia de Software, Centro Universitário Católica de Santa Catarina, Jaraguá do Sul. Autor: João Vitor da Silva Bast.
 
