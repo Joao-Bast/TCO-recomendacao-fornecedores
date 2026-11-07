@@ -1,6 +1,9 @@
 # scoring/calcular_tco.py
+import time
+
 from sqlalchemy import text
 from config.database import get_engine
+from config.monitoramento import registrar_tendencia
 from modelo.previsao_preco import analisar_tendencia
 
 # Pesos de partida — ajustáveis conforme necessidade do negócio
@@ -91,7 +94,9 @@ def calcular_ranking(nome_produto, sessao_id, top_n=3):
         raise ValueError(f"Nenhum pedido encontrado para o produto '{nome_produto}' nesta sessão")
 
     # O mesmo preço de referência exibido no painel de tendência ajusta o ranking.
+    inicio = time.perf_counter()
     tendencia = analisar_tendencia(nome_produto, sessao_id)
+    registrar_tendencia(tendencia, time.perf_counter() - inicio)
 
     ranking = montar_ranking(resultado, tendencia["preco_referencia"], top_n)
     return ranking, tendencia

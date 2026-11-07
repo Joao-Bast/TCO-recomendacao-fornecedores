@@ -13,5 +13,6 @@ USER appuser
 # 8080 é a porta padrão que o Cloud Run espera do contêiner.
 EXPOSE 8080
 
-# Forma exec (lista JSON): sem shell intermediário.
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", "--timeout", "0", "app:app"]
+# Forma exec (lista JSON): sem shell intermediário. O agente do New Relic envolve o
+# Gunicorn e só fica ativo quando NEW_RELIC_LICENSE_KEY está definida.
+CMD ["newrelic-admin", "run-program", "gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", "--timeout", "0", "app:app"]

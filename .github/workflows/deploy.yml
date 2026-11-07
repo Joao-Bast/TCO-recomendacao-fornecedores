@@ -50,7 +50,7 @@ jobs:
             --source . \
             --region us-central1 \
             --allow-unauthenticated \
-            --set-cloudsql-instances project-859a403e-4363-4c9b-963:us-central1:tco-fornecedores-db2 \
-            --set-env-vars DB_NAME=tcc_fornecedores,DB_USER=postgres,INSTANCE_CONNECTION_NAME=project-859a403e-4363-4c9b-963:us-central1:tco-fornecedores-db2 \
-            --set-secrets DB_PASSWORD=db-password:latest,FLASK_SECRET_KEY=flask-secret-key:latest \
+            --add-cloudsql-instances project-859a403e-4363-4c9b-963:southamerica-east1:tco-fornecedores-db \
+            --set-env-vars DB_NAME=tcc_fornecedores,DB_USER=postgres,INSTANCE_CONNECTION_NAME=project-859a403e-4363-4c9b-963:southamerica-east1:tco-fornecedores-db,NEW_RELIC_APP_NAME=tco-app,NEW_RELIC_LOG=stderr,NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED=false,NEW_RELIC_STRIP_EXCEPTION_MESSAGES_ENABLED=true,NEW_RELIC_TRANSACTION_TRACER_RECORD_SQL=off,NEW_RELIC_SLOW_SQL_ENABLED=false \
+            --set-secrets DB_PASSWORD=db-password:latest,FLASK_SECRET_KEY=flask-secret-key:latest,NEW_RELIC_LICENSE_KEY=new-relic-license-key:latest \
             --project project-859a403e-4363-4c9b-963

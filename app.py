@@ -1,11 +1,15 @@
 # app.py
 import os
+import time
 import uuid
 import traceback
 from pathlib import Path
 from flask import Flask, request, jsonify, send_file, session, render_template
 from dotenv import load_dotenv
+from sqlalchemy import text
 
+from config.database import get_engine
+from config.monitoramento import registrar_upload
 from etl.processar_upload import processar_planilha_upload
 from scoring.calcular_tco import calcular_ranking
 from modelo.previsao_preco import listar_produtos_cadastrados
@@ -24,6 +28,18 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/saude")
+def saude():
+    """Confere se a aplicação consegue falar com o banco. Não devolve detalhes do erro."""
+    try:
+        with get_engine().connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception:
+        traceback.print_exc()
+        return jsonify({"status": "indisponivel"}), 503
+    return jsonify({"status": "ok"})
+
+
 @app.route("/planilha-modelo")
 def planilha_modelo():
     return send_file(PLANILHA_MODELO, as_attachment=True, download_name="planilha_modelo.xlsx")
@@ -36,6 +52,7 @@ def upload():
         return jsonify({"erro": "Nenhum arquivo enviado."}), 400
 
     nova_sessao = str(uuid.uuid4())
+    inicio = time.perf_counter()
     try:
         sessao_id, total_validos, total_rejeitados, _ = processar_planilha_upload(arquivo, nova_sessao)
     except ValueError as e:
@@ -44,6 +61,7 @@ def upload():
         traceback.print_exc()
         return jsonify({"erro": f"Erro ao processar a planilha: {e}"}), 500
 
+    registrar_upload(total_validos, total_rejeitados, time.perf_counter() - inicio)
     session["sessao_id"] = sessao_id
 
     return jsonify({

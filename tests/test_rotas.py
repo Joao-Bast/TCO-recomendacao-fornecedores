@@ -1,5 +1,6 @@
 """Testes das rotas do Flask (sem banco): contrato HTTP e isolamento por sessão."""
 import io
+from types import SimpleNamespace
 
 import pytest
 
@@ -25,6 +26,17 @@ def enviar_planilha(cliente):
     )
 
 
+class ConexaoFalsa:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def execute(self, consulta):
+        return None
+
+
 # ------------------------------------------------------------------- páginas
 
 def test_pagina_inicial_abre(cliente):
@@ -41,6 +53,30 @@ def test_planilha_modelo_e_baixada_como_anexo(cliente):
     assert "attachment" in resposta.headers["Content-Disposition"]
     assert resposta.data[:2] == b"PK"   # .xlsx é um zip
     resposta.close()
+
+
+# --------------------------------------------------------------------- saúde
+
+def test_saude_responde_ok_quando_o_banco_responde(cliente, monkeypatch):
+    monkeypatch.setattr(app_modulo, "get_engine", lambda: SimpleNamespace(connect=lambda: ConexaoFalsa()))
+
+    resposta = cliente.get("/saude")
+
+    assert resposta.status_code == 200
+    assert resposta.get_json() == {"status": "ok"}
+
+
+def test_saude_devolve_503_sem_vazar_detalhes_quando_o_banco_falha(cliente, monkeypatch):
+    def quebra():
+        raise RuntimeError("senha=segredo")
+
+    monkeypatch.setattr(app_modulo, "get_engine", quebra)
+
+    resposta = cliente.get("/saude")
+
+    assert resposta.status_code == 503
+    assert resposta.get_json() == {"status": "indisponivel"}
+    assert "segredo" not in resposta.get_data(as_text=True)
 
 
 # -------------------------------------------------------------------- upload
@@ -62,6 +98,22 @@ def test_upload_valido_devolve_contagens_e_abre_a_sessao(cliente, monkeypatch):
     assert dados["total_validos"] == 3
     assert dados["total_rejeitados"] == 1
     assert dados["sessao_id"]
+
+
+def test_upload_registra_as_metricas_de_monitoramento(cliente, monkeypatch):
+    registrados = []
+    monkeypatch.setattr(app_modulo, "processar_planilha_upload", lambda arquivo, sessao: (sessao, 3, 1, None))
+    monkeypatch.setattr(
+        app_modulo, "registrar_upload",
+        lambda validos, rejeitados, duracao: registrados.append((validos, rejeitados, duracao)),
+    )
+
+    enviar_planilha(cliente)
+
+    assert len(registrados) == 1
+    validos, rejeitados, duracao = registrados[0]
+    assert (validos, rejeitados) == (3, 1)
+    assert duracao >= 0
 
 
 def test_upload_com_planilha_invalida_devolve_400_com_o_motivo(cliente, monkeypatch):
